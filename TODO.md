@@ -58,15 +58,16 @@ Tick items as you finish them (`- [x]`). Items marked **(you)** need the project
 - [x] Category, price range and condition filters, combinable with search
 - [x] Empty state
 - [x] Lazy-load images
-- [ ] **(you)** Test as a second user: see the item, search, filter, open it, WhatsApp button
+- [x] **(you)** Test as a second user: see the item, open it, WhatsApp button
 
 ## Phase 5: Seller dashboard and contact (FR-09, FR-10, FR-11)
 
-- [ ] My Listings page
-- [ ] Edit listing (including replacing images)
-- [ ] Delete listing, which also deletes its storage images
-- [ ] Mark as sold
-- [ ] "Contact Seller on WhatsApp" button with a pre-filled message
+- [x] My Listings page (`my-listings.html`)
+- [x] Edit listing, including replacing images (`sell.html?id=`)
+- [x] Delete listing, which also deletes its storage images
+- [x] Mark as sold / mark as available again
+- [x] "Contact Seller on WhatsApp" button with a pre-filled message
+- [ ] **(you)** Test: edit (with and without new photos), mark sold (disappears from marketplace), mark available, delete
 
 ## Phase 6: Testing
 

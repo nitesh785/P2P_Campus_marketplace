@@ -159,6 +159,7 @@ a { color: var(--accent); }
   background: var(--error);
   color: #fff;
 }
+.badge.available { background: var(--ok); }
 
 .meta { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
 .meta dt { color: var(--muted); }
@@ -175,16 +176,12 @@ a { color: var(--accent); }
 .topbar h1 { margin: 0; }
 .topbar nav { display: flex; gap: 16px; align-items: center; }
 
-.button.small { display: inline-block; padding: 8px 14px; }
+button.small, .button.small { display: inline-block; padding: 7px 12px; font-size: 0.9rem; }
 
-button.secondary {
-  display: block;
-  margin: 20px auto 0;
-  background: var(--card);
-  color: var(--accent);
-  border: 1px solid var(--border);
-  padding: 10px 24px;
-}
+.secondary { background: var(--card); color: var(--accent); border: 1px solid var(--border); }
+.danger { background: var(--card); color: var(--error); border: 1px solid var(--border); }
+
+.more { display: block; margin: 20px auto 0; padding: 10px 24px; }
 
 .filters { display: grid; grid-template-columns: 2fr 1fr 1fr 0.7fr 0.7fr; gap: 8px; margin-bottom: 12px; }
 @media (max-width: 700px) {
@@ -228,6 +225,27 @@ button.secondary {
 /* Cards from search or "Load more" fade in instead of popping. Opacity only: this happens often. */
 .grid li { transition: opacity 180ms var(--ease-out); }
 @starting-style { .grid li { opacity: 0; } }
+
+/* ---------- My listings ---------- */
+
+.rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+
+.rows li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.row-main { display: flex; gap: 12px; align-items: center; color: inherit; text-decoration: none; min-width: 0; }
+.row-main img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; flex: none; background: #eef0f5; }
+.row-main > span { display: grid; gap: 2px; justify-items: start; min-width: 0; }
+.row-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* ---------- Reduced motion: keep fades, drop movement ---------- */
 

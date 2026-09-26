@@ -74,7 +74,7 @@ Coding style, tools, communication and workflow preferences go here as teammates
 ## Conventions
 
 - **Database:** snake_case tables/columns; schema lives in `supabase/schema.sql`; every schema change goes in that file.
-- **Folders:** HTML pages at the repo root (`index.html`, `login.html`, `register.html`, `reset.html`, `sell.html`, `product.html`); `src/lib/supabase.js` (client + shared helpers); `src/styles/main.css`; `supabase/schema.sql`. Each page has one inline `<script type="module">`.
+- **Folders:** HTML pages at the repo root (`index.html`, `login.html`, `register.html`, `reset.html`, `sell.html` (also edit mode via `?id=`), `product.html`, `my-listings.html`); `src/lib/supabase.js` (client + shared helpers); `src/styles/main.css`; `supabase/schema.sql`. Each page has one inline `<script type="module">`.
 - **Config:** Supabase URL + anon key live in `src/lib/supabase.js` (public-safe). No env vars in the frontend. GitHub Actions uses secrets `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
 - **Roll numbers:** regex `^[0-9]{4}(CSE|CSDS|CSAI|CSIT)[0-9]{3}$`, enforced in the DB (`allowed_students`) and in `src/lib/supabase.js` (`ROLL_NO_PATTERN`). New course → update both.
 - **Git:** repo at https://github.com/nitesh785/P2P_Campus_marketplace, default branch `main`. Branching and review rules are TBD by the team.
@@ -89,8 +89,10 @@ Coding style, tools, communication and workflow preferences go here as teammates
 - **Done:** Phase 3 code: `sell.html` (form, native canvas compression to WebP/JPEG ≤ 200 KB, upload + cleanup on failure) and `product.html` (swipe gallery, details, WhatsApp button).
 - **Done:** Phase 3 tested by owner (sell + view photos works).
 - **Done:** Phase 4 code: marketplace grid on `index.html`, prefix full-text search (`calc` finds calculator), category/condition/price filters, 20 per page + Load more.
-- **Not done yet:** Phase 4 manual test; Phase 5 (My Listings: edit, delete, mark sold).
-- **Next step:** owner tests the marketplace as a second user; then Phase 5.
+- **Done:** Phase 4 tested by owner (second user sees item, WhatsApp contact works).
+- **Done:** Phase 5 code: `my-listings.html` (edit, mark sold/available, delete with photo cleanup), edit mode in `sell.html`.
+- **Not done yet:** Phase 5 manual test; Phase 6 testing checklist; Phase 7 deployment.
+- **Next step:** owner tests My Listings; then Phase 6 (testing) and Phase 7 (deploy to Cloudflare Pages).
 
 ## Gotchas (setup lessons)
 
@@ -111,3 +113,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-26 | Brevo SMTP connected (fixed Unauthorized IP error); auth flow tested OK |
 | 2026-09-26 | Phase 3: sell + product pages, motion rules from emil-design-eng/animate skills, storage read policy, fixed [hidden] CSS bug |
 | 2026-09-26 | Phase 4: marketplace grid with search, filters, pagination on index.html |
+| 2026-09-26 | Phase 5: My Listings page, edit mode on sell page |

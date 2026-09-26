@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My listings · Campus Marketplace</title>
+  <link rel="stylesheet" href="src/styles/main.css">
+</head>
+<body>
+<main class="wide">
+  <p><a href="index.html">← Marketplace</a></p>
+  <header class="topbar">
+    <h1>My listings</h1>
+    <a class="button small" href="sell.html">Sell an item</a>
+  </header>
+  <p id="msg" class="msg" role="status" aria-live="polite"></p>
+  <ul id="list" class="rows"></ul>
+</main>
+
+<script type="module">
+  import { supabase, requireUser, showMessage } from './src/lib/supabase.js';
+
+  const user = await requireUser();
+  const list = document.getElementById('list');
+  const bucket = supabase.storage.from('product-images');
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ponytail: no pagination here; a student rarely has more than a handful of listings.
+  const { data, error } = await supabase
+    .from('products')
+    .select('id, title, price, status, image_paths')
+    .eq('seller_id', user?.id ?? '')
+    .order('created_at', { ascending: false });
+
+  if (error) showMessage(error.message);
+  else list.replaceChildren(...data.map(row));
+  showEmptyState();
+
+  function showEmptyState() {
+    if (!list.children.length) showMessage('You have no listings yet. Tap "Sell an item" to post one.', true);
+  }
+
+  function row(p) {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <a class="row-main" href="product.html?id=${p.id}">
+        <img alt="">
+        <span>
+          <strong class="row-title"></strong>
+          <span class="row-price"></span>
+          <span class="badge"></span>
+        </span>
+      </a>
+      <div class="row-actions">
+        <a class="button small secondary" href="sell.html?id=${p.id}">Edit</a>
+        <button type="button" class="small secondary" data-act="status"></button>
+        <button type="button" class="small danger" data-act="delete">Delete</button>
+      </div>`;
+    li.querySelector('img').src = bucket.getPublicUrl(p.image_paths[0]).data.publicUrl;
+    li.querySelector('.row-title').textContent = p.title;
+    li.querySelector('.row-price').textContent = `₹${p.price.toLocaleString('en-IN')}`;
+
+    const badge = li.querySelector('.badge');
+    const statusButton = li.querySelector('[data-act=status]');
+    const render = () => {
+      const sold = p.status === 'sold';
+      badge.textContent = sold ? 'Sold' : 'Available';
+      badge.classList.toggle('available', !sold);
+      statusButton.textContent = sold ? 'Mark as available' : 'Mark as sold';
+    };
+    render();
+
+    statusButton.addEventListener('click', async () => {
+      const status = p.status === 'sold' ? 'available' : 'sold';
+      statusButton.disabled = true;
+      const { error } = await supabase.from('products').update({ status }).eq('id', p.id);
+      statusButton.disabled = false;
+      if (error) return showMessage(error.message);
+      p.status = status;
+      render();
+      showMessage(status === 'sold' ? `"${p.title}" is marked as sold and hidden from the marketplace.` : `"${p.title}" is back on the marketplace.`, true);
+    });
+
+    li.querySelector('[data-act=delete]').addEventListener('click', async () => {
+      if (!confirm(`Delete "${p.title}"? This cannot be undone.`)) return;
+      const { error } = await supabase.from('products').delete().eq('id', p.id);
+      if (error) return showMessage(error.message);
+      // ponytail: row first, photos second. If photo removal fails we only leak storage, never show a broken listing.
+      await bucket.remove(p.image_paths);
+
+      // Fade the row out so the list doesn't jump without explanation.
+      await li.animate(
+        reduceMotion
+          ? [{ opacity: 1 }, { opacity: 0 }]
+          : [{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.97)' }],
+        { duration: 150, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' },
+      ).finished;
+      li.remove();
+      showMessage(`"${p.title}" was deleted.`, true);
+      showEmptyState();
+    });
+
+    return li;
+  }
+</script>
+</body>
+</html>
