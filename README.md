@@ -450,6 +450,11 @@ create policy "upload to own folder" on storage.objects for insert to authentica
   with check (bucket_id = 'product-images'
               and (storage.foldername(name))[1] = auth.uid()::text);
 
+-- Storage API deletes need select + delete on the objects
+create policy "read own images" on storage.objects for select to authenticated
+  using (bucket_id = 'product-images'
+         and (storage.foldername(name))[1] = auth.uid()::text);
+
 create policy "delete own images" on storage.objects for delete to authenticated
   using (bucket_id = 'product-images'
          and (storage.foldername(name))[1] = auth.uid()::text);

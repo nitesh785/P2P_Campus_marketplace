@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Item · Campus Marketplace</title>
+  <link rel="stylesheet" href="src/styles/main.css">
+</head>
+<body>
+<main class="wide">
+  <p><a href="index.html">← Back</a></p>
+  <p id="msg" class="msg" role="status" aria-live="polite"></p>
+
+  <article id="product" hidden>
+    <div id="gallery" class="gallery" tabindex="0" aria-label="Photos"></div>
+    <div id="thumbs" class="thumbs"></div>
+
+    <h1 id="title"></h1>
+    <p class="price"><span id="price"></span> <span id="sold" class="badge" hidden>Sold</span></p>
+
+    <dl class="meta">
+      <dt>Condition</dt><dd id="condition"></dd>
+      <dt>Category</dt><dd id="category"></dd>
+      <dt>Seller</dt><dd id="seller"></dd>
+      <dt>Posted</dt><dd id="posted"></dd>
+    </dl>
+
+    <p id="description" class="description"></p>
+
+    <a id="contact" class="button whatsapp" target="_blank" rel="noopener">Contact seller on WhatsApp</a>
+    <p id="own" class="note" hidden>This is your listing.</p>
+  </article>
+</main>
+
+<script type="module">
+  import { supabase, requireUser, showMessage } from './src/lib/supabase.js';
+
+  const user = await requireUser();
+  const id = new URLSearchParams(location.search).get('id');
+  const $ = (elId) => document.getElementById(elId);
+
+  const { data: p } = await supabase
+    .from('products')
+    .select('*, categories(name, icon), profiles(name, phone)')
+    .eq('id', id ?? '')
+    .maybeSingle();
+
+  if (!p) {
+    showMessage('This listing was not found. It may have been deleted.');
+  } else {
+    document.title = `${p.title} · Campus Marketplace`;
+    $('title').textContent = p.title;
+    $('price').textContent = `₹${p.price.toLocaleString('en-IN')}`;
+    $('condition').textContent = p.condition;
+    $('category').textContent = `${p.categories.icon} ${p.categories.name}`;
+    $('seller').textContent = p.profiles.name;
+    $('posted').textContent = new Date(p.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    $('description').textContent = p.description;
+
+    const sold = p.status === 'sold';
+    const mine = p.seller_id === user.id;
+    $('sold').hidden = !sold;
+    $('own').hidden = !mine;
+    $('contact').hidden = sold || mine;
+
+    // ponytail: a 10-digit number is assumed Indian (+91); longer numbers already include a country code.
+    const phone = p.profiles.phone.length === 10 ? `91${p.profiles.phone}` : p.profiles.phone;
+    const text = `Hi, is "${p.title}" still available? (Campus Marketplace)`;
+    $('contact').href = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+
+    renderGallery(p.image_paths.map((path) =>
+      supabase.storage.from('product-images').getPublicUrl(path).data.publicUrl));
+    $('product').hidden = false;
+  }
+
+  function renderGallery(urls) {
+    const gallery = $('gallery');
+    const thumbs = $('thumbs');
+    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const slides = urls.map((url, i) => {
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = `Photo ${i + 1} of ${urls.length}`;
+      return img;
+    });
+    gallery.replaceChildren(...slides);
+    if (urls.length < 2) return;
+
+    const buttons = urls.map((url, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('aria-label', `Show photo ${i + 1}`);
+      b.innerHTML = '<img alt="">';
+      b.firstChild.src = url;
+      b.onclick = () => slides[i].scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'nearest', inline: 'start' });
+      return b;
+    });
+    thumbs.replaceChildren(...buttons);
+
+    // Highlight the thumbnail of whichever photo is in view (also after swiping).
+    const observer = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) buttons.forEach((b, i) => b.setAttribute('aria-current', slides[i] === e.target));
+      }
+    }, { root: gallery, threshold: 0.6 });
+    slides.forEach((s) => observer.observe(s));
+  }
+</script>
+</body>
+</html>

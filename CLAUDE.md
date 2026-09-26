@@ -67,12 +67,14 @@ College-only web marketplace where verified students buy and sell second-hand it
 Coding style, tools, communication and workflow preferences go here as teammates give them.
 
 - Keep docs and plans as Markdown files in this repo folder (PRD.md, TODO.md, README.md), not online docs.
+- **UI & motion:** follow the installed Claude Code skills `emil-design-eng` and `animate` (Emil Kowalski's philosophy). Use `--ease-out: cubic-bezier(0.23, 1, 0.32, 1)` from `main.css`; animate only transform/opacity; UI motion under 300 ms; press feedback `scale(0.97)`; no animation on page load or frequent actions; always a `prefers-reduced-motion` variant; hover motion only behind `@media (hover: hover) and (pointer: fine)`.
+- **Code style:** the Ponytail plugin is active: simplest working code, native browser features before libraries, fewest files. It never cuts security, validation or accessibility.
 - _(add more as they come)_
 
 ## Conventions
 
 - **Database:** snake_case tables/columns; schema lives in `supabase/schema.sql`; every schema change goes in that file.
-- **Folders:** HTML pages at the repo root (`index.html`, `login.html`, `register.html`, `reset.html`); `src/lib/supabase.js` (client + shared helpers); `src/styles/main.css`; `supabase/schema.sql`. Each page has one inline `<script type="module">`.
+- **Folders:** HTML pages at the repo root (`index.html`, `login.html`, `register.html`, `reset.html`, `sell.html`, `product.html`); `src/lib/supabase.js` (client + shared helpers); `src/styles/main.css`; `supabase/schema.sql`. Each page has one inline `<script type="module">`.
 - **Config:** Supabase URL + anon key live in `src/lib/supabase.js` (public-safe). No env vars in the frontend. GitHub Actions uses secrets `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
 - **Roll numbers:** regex `^[0-9]{4}(CSE|CSDS|CSAI|CSIT)[0-9]{3}$`, enforced in the DB (`allowed_students`) and in `src/lib/supabase.js` (`ROLL_NO_PATTERN`). New course → update both.
 - **Git:** repo at https://github.com/nitesh785/P2P_Campus_marketplace, default branch `main`. Branching and review rules are TBD by the team.
@@ -84,13 +86,15 @@ Coding style, tools, communication and workflow preferences go here as teammates
 - **Done:** Git repo pushed to GitHub (`main`).
 - **Done:** `schema.sql` run in Supabase (project `icphsbadppjnztfxxuui`); URL + publishable key in `src/lib/supabase.js`; register, login, forgot/reset password, logout and a guarded home page built.
 - **Done:** Brevo SMTP connected; sign-up → confirmation email → login tested successfully (2026-09-26).
-- **Not done yet:** marketplace, listings, dashboard.
-- **Next step:** Phase 3: create listing + image upload.
+- **Done:** Phase 3 code: `sell.html` (form, native canvas compression to WebP/JPEG ≤ 200 KB, upload + cleanup on failure) and `product.html` (swipe gallery, details, WhatsApp button).
+- **Not done yet:** Phase 3 needs a manual test; the `read own images` storage policy must be run in Supabase; marketplace grid, dashboard.
+- **Next step:** owner runs the new storage policy and tests selling an item; then Phase 4 (marketplace grid, search, filters).
 
 ## Gotchas (setup lessons)
 
 - **Brevo `525 5.7.1 Unauthorized IP address`:** turn off Brevo → Security → Authorised IPs → "Block unknown IP addresses". Supabase sends from changing IPs, so allowlisting one IP doesn't work.
 - **Failed sign-up leaves an unconfirmed user:** delete it in Supabase → Authentication → Users to free the roll number.
+- **CSS `hidden`:** `display: grid/block` rules override the `hidden` attribute; `main.css` has a global `[hidden] { display: none !important; }`. Keep it.
 - **Local testing:** Supabase Auth URL config has Site URL `http://127.0.0.1:5500` and redirect `http://127.0.0.1:5500/**` (VS Code Live Server). Update both when deploying.
 
 ## Change log
@@ -103,3 +107,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-26 | Roll-number format decided; added supabase/schema.sql and src/lib/supabase.js |
 | 2026-09-26 | Schema run in Supabase; added auth pages (register, login, reset, home with logout) |
 | 2026-09-26 | Brevo SMTP connected (fixed Unauthorized IP error); auth flow tested OK |
+| 2026-09-26 | Phase 3: sell + product pages, motion rules from emil-design-eng/animate skills, storage read policy, fixed [hidden] CSS bug |

@@ -42,11 +42,13 @@ Tick items as you finish them (`- [x]`). Items marked **(you)** need the project
 
 ## Phase 3: Listings (FR-03, FR-04, FR-08)
 
-- [ ] Create Listing form with validation
-- [ ] Browser image compression (`browser-image-compression`, WebP, 1080 px, 200 KB or less)
-- [ ] Upload 1–3 images to `<user_id>/<product_id>/<n>.webp`
-- [ ] Insert the product row with `image_paths`
-- [ ] Product details page with an image carousel
+- [ ] **(you)** Run the new `read own images` storage policy in Supabase
+- [x] Create Listing form with validation (`sell.html`)
+- [x] Browser image compression (native canvas, WebP/JPEG, 1080 px, 200 KB or less; no library)
+- [x] Upload 1–3 images to `<user_id>/<product_id>/<n>.webp`, clean up on failure
+- [x] Insert the product row with `image_paths`
+- [x] Product details page with a swipe gallery and WhatsApp button (`product.html`)
+- [ ] **(you)** Test: sell an item with 3 photos, view it, check the WhatsApp link
 
 ## Phase 4: Marketplace (FR-05, FR-06, FR-07)
 
