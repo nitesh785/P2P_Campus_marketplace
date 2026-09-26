@@ -8,7 +8,7 @@ Tick items as you finish them (`- [x]`). Items marked **(you)** need the project
 - [x] **(you)** Pick the frontend: plain HTML/CSS/JS
 - [x] **(you)** Who can join: students only
 - [ ] **(you)** Get the official roll-number list as a CSV (`roll_no,full_name`)
-- [ ] **(you)** Tell Claude the roll-number format (e.g. `22BCS045`)
+- [x] **(you)** Roll-number format: `2026CSE102` (courses CSE, CSDS, CSAI, CSIT)
 - [ ] **(you)** Add team members' names and roles to CLAUDE.md
 - [ ] **(you)** Invite team admins to the Supabase project (Organization → Team)
 - [ ] **(you)** Confirm the demo or submission deadline
@@ -22,13 +22,11 @@ Tick items as you finish them (`- [x]`). Items marked **(you)** need the project
 ## Phase 1: Project setup
 
 - [x] `git init`, add `.gitignore` (includes `.env`), push to GitHub
-- [ ] Scaffold the folder structure (`src/lib`, `src/pages`, `src/components`, `src/styles`, `supabase/`)
-- [ ] Write `supabase/schema.sql` (tables, enums, indexes, categories seed)
-- [ ] Add the Row Level Security policies and the roll-number sign-up trigger to `schema.sql`
+- [x] Write `supabase/schema.sql` (tables, indexes, categories, sign-up trigger, RLS, storage bucket and policies)
 - [ ] Import the roll-number CSV into `allowed_students`
-- [ ] Run `schema.sql` in the Supabase SQL Editor
-- [ ] Create the public `product-images` bucket (1 MB limit, webp/jpeg/png) and its storage policies
-- [ ] Add `src/lib/supabase.js` (`createClient` with URL + anon key, supabase-js from CDN)
+- [ ] **(you)** Run `supabase/schema.sql` in the Supabase SQL Editor (it also creates the `product-images` bucket)
+- [x] Add `src/lib/supabase.js` (supabase-js from CDN, roll-number pattern)
+- [ ] **(you)** Put the Supabase project URL and anon key in `src/lib/supabase.js`
 
 ## Phase 2: Authentication (FR-01, FR-02)
 

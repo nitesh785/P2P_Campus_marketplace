@@ -254,7 +254,7 @@ auth.users (managed by Supabase)
 
 ### SQL Schema
 
-Run this in **Supabase → SQL Editor**:
+The complete, runnable version lives in [`supabase/schema.sql`](supabase/schema.sql) and is the source of truth. Run it in **Supabase → SQL Editor**. Key parts:
 
 ```sql
 -- Enable fuzzy search
@@ -263,7 +263,7 @@ create extension if not exists pg_trgm;
 -- 0. Official student list (roll numbers), uploaded by admins as CSV
 --    in Supabase → Table Editor → allowed_students → Import data from CSV
 create table public.allowed_students (
-  roll_no     text primary key check (roll_no = upper(roll_no)),  -- store in UPPERCASE
+  roll_no     text primary key check (roll_no ~ '^[0-9]{4}(CSE|CSDS|CSAI|CSIT)[0-9]{3}$'),  -- e.g. 2026CSE102
   full_name   text,
   claimed_by  uuid unique references auth.users(id) on delete set null
 );
@@ -273,7 +273,6 @@ create table public.profiles (
   id          uuid primary key references auth.users(id) on delete cascade,
   roll_no     text not null unique references public.allowed_students(roll_no),
   name        text not null check (char_length(name) between 2 and 60),
-  email       text not null unique,
   phone       text not null check (phone ~ '^[0-9]{10,13}$'),
   created_at  timestamptz not null default now()
 );
@@ -384,8 +383,8 @@ begin
     raise exception 'Roll number is not on the student list or is already registered';
   end if;
 
-  insert into profiles (id, roll_no, name, email, phone)
-  values (new.id, roll, meta->>'name', new.email, meta->>'phone');
+  insert into profiles (id, roll_no, name, phone)
+  values (new.id, roll, trim(meta->>'name'), trim(meta->>'phone'));
   return new;
 end $$;
 
@@ -419,7 +418,7 @@ create policy "read categories" on public.categories
   for select to authenticated using (true);
 
 -- Profiles: logged-in students can read; the sign-up trigger creates rows;
--- users may edit only their own name and phone (never roll_no or email)
+-- users may edit only their own name and phone (never roll_no); email stays private in auth.users
 create policy "read profiles"   on public.profiles for select to authenticated using (true);
 create policy "update own profile" on public.profiles for update to authenticated
   using (id = auth.uid());
@@ -625,7 +624,7 @@ cd campus-marketplace
 4. **Authentication → Providers → Email**: enable *Confirm email*.
 5. **Authentication → SMTP Settings**: enter your Brevo SMTP credentials.
 6. **Authentication → URL Configuration**: set the Site URL to your deployed Pages URL.
-7. **Table Editor → allowed_students**: import the student list CSV (columns `roll_no`, `full_name`; roll numbers in UPPERCASE).
+7. **Table Editor → allowed_students**: import the student list CSV (columns `roll_no`, `full_name`; format `2026CSE102`, courses CSE/CSDS/CSAI/CSIT).
 
 ### Suggested folder structure
 

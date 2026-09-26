@@ -45,10 +45,12 @@ College-only web marketplace where verified students buy and sell second-hand it
 | 2026-09-26 | Frontend is plain HTML/CSS/JS (no React, no build step) | Owner |
 | 2026-09-26 | Only students may join (no staff/alumni) | Owner |
 | 2026-09-26 | Team members are the admins; they use the Supabase dashboard | Owner |
+| 2026-09-26 | Roll-number format `<year><course><3-digit serial>`, e.g. `2026CSE102`; courses CSE, CSDS, CSAI, CSIT | Owner |
+| 2026-09-26 | Student emails are not copied into `profiles`; they stay private in `auth.users` | Claude |
 
 ## Open questions (move to Decisions when answered)
 
-- [ ] Roll-number format (e.g. `22BCS045`) and source of the official list
+- [ ] Source of the official roll-number list (CSV)
 - [ ] Team members' names and roles
 - [ ] Demo or submission deadline
 - [ ] Is college permission needed?
@@ -72,7 +74,7 @@ Coding style, tools, communication and workflow preferences go here as teammates
 - **Database:** snake_case tables/columns; schema lives in `supabase/schema.sql`; every schema change goes in that file.
 - **Folders:** `src/lib` (Supabase client, helpers), `src/pages`, `src/components`, `src/styles`, `supabase/`.
 - **Config:** Supabase URL + anon key live in `src/lib/supabase.js` (public-safe). No env vars in the frontend. GitHub Actions uses secrets `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
-- **Roll numbers:** stored in UPPERCASE and trimmed.
+- **Roll numbers:** regex `^[0-9]{4}(CSE|CSDS|CSAI|CSIT)[0-9]{3}$`, enforced in the DB (`allowed_students`) and in `src/lib/supabase.js` (`ROLL_NO_PATTERN`). New course → update both.
 - **Git:** repo at https://github.com/nitesh785/P2P_Campus_marketplace, default branch `main`. Branching and review rules are TBD by the team.
 
 ## Current status
@@ -80,8 +82,9 @@ Coding style, tools, communication and workflow preferences go here as teammates
 - **Phase:** 1, project setup (see TODO.md). All accounts are created.
 - **Done:** README rewritten for zero cost; PRD.md and TODO.md created; database chosen.
 - **Done:** Git repo pushed to GitHub (`main`).
-- **Not done yet:** code, Supabase project.
-- **Next step:** Phase 1: folder structure, `supabase/schema.sql`, `src/lib/supabase.js`. Waiting on the roll-number format and list.
+- **Done:** `supabase/schema.sql` (tables, sign-up trigger, RLS, storage) and `src/lib/supabase.js` written.
+- **Not done yet:** schema not yet run in Supabase; Supabase URL/anon key not yet in `src/lib/supabase.js`; no pages yet.
+- **Next step:** owner runs `schema.sql` and adds URL/anon key; then Phase 2 (register/login pages).
 
 ## Change log
 
@@ -90,3 +93,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-25 | Created CLAUDE.md, README.md, PRD.md, TODO.md |
 | 2026-09-26 | Initialised Git, added .gitignore, pushed to GitHub |
 | 2026-09-26 | Switched verification to roll-number allowlist; frontend set to plain HTML/JS; README, PRD, TODO updated |
+| 2026-09-26 | Roll-number format decided; added supabase/schema.sql and src/lib/supabase.js |
