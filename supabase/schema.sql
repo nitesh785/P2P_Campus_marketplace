@@ -159,3 +159,6 @@ create policy "delete own images" on storage.objects
 -- 2026-09-27: how many of an item the seller has
 alter table public.products
   add column if not exists quantity smallint not null default 1 check (quantity between 1 and 99);
+
+-- Larger batches live in supabase/migrations/ and must be run after this file, in date order:
+--   2026-09-27-features.sql  (saved items, reports/admin, pickup, negotiable, expiry, wanted, chat, reviews, fuzzy search)

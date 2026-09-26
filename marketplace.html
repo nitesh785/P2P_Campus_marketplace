@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Marketplace · Campus Marketplace</title>
   <link rel="stylesheet" href="/src/styles/main.css">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0f766e">
 </head>
 <body>
 <div id="site-header"></div>
@@ -30,16 +34,29 @@
           <option value="">Any condition</option>
           <option>New</option><option>Like New</option><option>Good</option><option>Fair</option><option>Poor</option>
         </select>
+        <select class="select" name="pickup" aria-label="Pickup location"><option value="">Any pickup</option></select>
+        <select class="select" name="deal" aria-label="Price type">
+          <option value="">Any price</option>
+          <option value="free">Free items</option>
+          <option value="negotiable">Negotiable</option>
+        </select>
         <select class="select" name="sort" aria-label="Sort by">
           <option value="">Newest first</option>
           <option value="price_asc">Price: low to high</option>
           <option value="price_desc">Price: high to low</option>
         </select>
+      </div>
+      <div class="toolbar-row-2">
         <input class="input" name="min" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="Min ₹" aria-label="Minimum price">
         <input class="input" name="max" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="Max ₹" aria-label="Maximum price">
+        <div class="chips" id="chips" role="group" aria-label="Category"></div>
       </div>
-      <div class="chips" id="chips" role="group" aria-label="Category"></div>
     </form>
+
+    <section id="recent-section" class="recent" hidden>
+      <h2 class="recent-h"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#history"></use></svg>Recently viewed</h2>
+      <ul class="product-grid recent-row" id="recent"></ul>
+    </section>
 
     <div class="results-bar"><span id="count" aria-live="polite"></span></div>
     <ul id="grid" class="product-grid" aria-busy="true"></ul>
@@ -51,7 +68,7 @@
 
 <script type="module">
   import { supabase, requireUser } from '/src/lib/supabase.js';
-  import { icon, categoryIcon, productCard, skeletonCards, stateBlock } from '/src/lib/layout.js';
+  import { icon, categoryIcon, productCard, skeletonCards, stateBlock, nowIso, savedIds, recentlyViewed, PICKUP_LOCATIONS } from '/src/lib/layout.js';
 
   const PAGE_SIZE = 20;
   await requireUser();
@@ -65,9 +82,15 @@
   let page = 0;
   let category = ''; // category id
   let requestId = 0; // ignore responses that arrive after a newer search started
+  const FILTERS = ['q', 'condition', 'pickup', 'deal', 'sort', 'min', 'max'];
+  const SELECT = 'id, title, price, quantity, negotiable, pickup_location, condition, image_paths, categories(name), profiles(name)';
+  for (const place of PICKUP_LOCATIONS) f.pickup.add(new Option(place, place));
 
   // Category chips from the database
-  const { data: categories } = await supabase.from('categories').select('id, name').order('id');
+  const [{ data: categories }, saved] = await Promise.all([
+    supabase.from('categories').select('id, name').order('id'),
+    savedIds(),
+  ]);
   const chip = (id, label, iconName) => {
     const b = document.createElement('button');
     b.type = 'button';
@@ -85,19 +108,19 @@
 
   // Restore filters from the URL (?q=, ?category=<name>, ...) so links and refreshes keep them
   const params = new URLSearchParams(location.search);
-  for (const name of ['q', 'condition', 'sort', 'min', 'max']) if (params.get(name)) f[name].value = params.get(name);
+  for (const name of FILTERS) if (params.get(name)) f[name].value = params.get(name);
   setCategory(categories?.find((c) => c.name === params.get('category'))?.id ?? '');
 
   function syncUrl() {
     const p = new URLSearchParams();
-    for (const name of ['q', 'condition', 'sort', 'min', 'max']) if (f[name].value) p.set(name, f[name].value);
+    for (const name of FILTERS) if (f[name].value) p.set(name, f[name].value);
     const catName = categories?.find((c) => String(c.id) === category)?.name;
     if (catName) p.set('category', catName);
     const query = p.toString();
     history.replaceState(null, '', query ? `?${query}` : location.pathname);
   }
 
-  const hasFilters = () => category || ['q', 'condition', 'min', 'max'].some((n) => f[n].value);
+  const hasFilters = () => category || FILTERS.filter((n) => n !== 'sort').some((n) => f[n].value);
 
   // "calc cas" → 'calc:* & cas:*' so partial words match (prefix search on the full-text index).
   // Only letters and digits get through, so user input can't break the query syntax.
@@ -118,13 +141,17 @@
 
     let q = supabase
       .from('products')
-      .select('id, title, price, quantity, condition, image_paths, categories(name), profiles(name)', { count: 'exact' })
-      .eq('status', 'available');
+      .select(SELECT, { count: 'exact' })
+      .eq('status', 'available')
+      .gt('expires_at', nowIso());
 
     const search = toPrefixQuery(f.q.value);
     if (search) q = q.textSearch('search', search, { config: 'english' });
     if (category) q = q.eq('category_id', Number(category));
     if (f.condition.value) q = q.eq('condition', f.condition.value);
+    if (f.pickup.value) q = q.eq('pickup_location', f.pickup.value);
+    if (f.deal.value === 'free') q = q.eq('price', 0);
+    if (f.deal.value === 'negotiable') q = q.eq('negotiable', true);
     if (f.min.value) q = q.gte('price', Number(f.min.value));
     if (f.max.value) q = q.lte('price', Number(f.max.value));
 
@@ -147,18 +174,52 @@
       }));
     }
 
-    const cards = data.map((p) => productCard(p));
+    // Nothing found for a search? Try a typo-tolerant match on titles ("calcualtor" → calculator).
+    if (reset && !data.length && search) {
+      const similar = await fuzzyResults(f.q.value.trim());
+      if (id !== requestId) return;
+      if (similar.length) {
+        grid.replaceChildren(...similar.map((p) => productCard(p, { saved })));
+        count.textContent = `No exact matches. Showing ${similar.length} similar ${similar.length === 1 ? 'item' : 'items'} for “${f.q.value.trim()}”`;
+        more.hidden = true;
+        return;
+      }
+    }
+
+    const cards = data.map((p) => productCard(p, { saved }));
     if (reset) grid.replaceChildren(...cards);
     else grid.append(...cards);
 
     count.textContent = total ? `${total} ${total === 1 ? 'item' : 'items'}` : '';
     more.hidden = grid.children.length >= (total ?? 0);
+    document.getElementById('recent-section').hidden = hasFilters() || !recentCount;
 
     if (!grid.children.length) {
       grid.replaceChildren(hasFilters()
         ? stateBlock({ iconName: 'search', title: 'No listings found', text: 'Try changing your search or filters.', action: { label: 'Clear filters', onClick: clearFilters } })
         : stateBlock({ iconName: 'package', title: 'Nothing for sale yet', text: 'Be the first student to list something.', action: { label: 'Sell an item', href: 'sell.html' } }));
     }
+  }
+
+  async function fuzzyResults(text) {
+    const { data: ids } = await supabase.rpc('search_products_fuzzy', { q: text.slice(0, 60) });
+    if (!ids?.length) return [];
+    const order = ids.map((r) => r.id);
+    const { data } = await supabase.from('products').select(SELECT).in('id', order);
+    return (data ?? []).sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+  }
+
+  // Recently viewed (stored in this browser only)
+  let recentCount = 0;
+  async function loadRecent() {
+    const ids = recentlyViewed();
+    if (!ids.length) return;
+    const { data } = await supabase.from('products').select(SELECT)
+      .in('id', ids).eq('status', 'available').gt('expires_at', nowIso());
+    const items = (data ?? []).sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id)).slice(0, 6);
+    recentCount = items.length;
+    document.getElementById('recent').replaceChildren(...items.map((p) => productCard(p, { saved })));
+    document.getElementById('recent-section').hidden = hasFilters() || !recentCount;
   }
 
   function clearFilters() {
@@ -184,6 +245,7 @@
   more.addEventListener('click', () => { page++; load(false); });
 
   load(true);
+  loadRecent();
 </script>
 </body>
 </html>

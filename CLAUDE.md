@@ -30,10 +30,10 @@ College-only web marketplace where verified students buy and sell second-hand it
 | Emails | Brevo free SMTP (fallback: Resend or Gmail SMTP) |
 | Hosting | Cloudflare Pages |
 | Keep-alive | `.github/workflows/keep-alive.yml`, twice a week (Supabase pauses after 7 idle days) |
-| Contact | WhatsApp `wa.me` links (no in-app chat in MVP) |
+| Contact | In-app chat (`messages.html`, Supabase Realtime) plus WhatsApp `wa.me` links |
 | Frontend | Plain HTML/CSS/JS, no build step; libraries (supabase-js, browser-image-compression) from the jsDelivr CDN |
 | Student verification | Roll-number allowlist (`allowed_students` table, CSV import); any email allowed; one account per roll number |
-| Admin tools (MVP) | Supabase dashboard (Table Editor, Auth → Users); no in-app admin page yet |
+| Admin tools | `admin.html` (reports, block/unblock, remove listings) for profiles with `is_admin = true`; roll list still in the Supabase dashboard |
 
 ## Decisions
 
@@ -49,10 +49,15 @@ College-only web marketplace where verified students buy and sell second-hand it
 | 2026-09-26 | Roll-number format `<year><course><3-digit serial>`, e.g. `2026CSE102`; courses CSE, CSDS, CSAI, CSIT | Owner |
 | 2026-09-26 | Student emails are not copied into `profiles`; they stay private in `auth.users` | Claude |
 | 2026-09-27 | Listings have a quantity (1–99). "Sold one" lowers it; the last one is marked sold | Owner + Claude |
+| 2026-09-27 | Build every free-tier feature from suggestion.md except email alerts | Owner |
+| 2026-09-27 | Listings expire 60 days after posting/renewal via an `expires_at` column filtered in queries (no cron job) | Claude |
+| 2026-09-27 | Only a buyer the seller replied to in Messages can rate that seller, once per conversation | Claude |
+| 2026-09-27 | Admins are set by SQL (`update profiles set is_admin = true ...`); users can never change `is_admin`/`blocked` | Claude |
 
 ## Open questions (move to Decisions when answered)
 
 - [ ] Source of the official roll-number list (CSV)
+- [ ] Confirm the pickup location list (`PICKUP_LOCATIONS` in `src/lib/layout.js`)
 - [ ] Team members' names and roles
 - [ ] Demo or submission deadline
 - [ ] Is college permission needed?
@@ -76,11 +81,13 @@ Coding style, tools, communication and workflow preferences go here as teammates
 ## Conventions
 
 - **Database:** snake_case tables/columns; schema lives in `supabase/schema.sql`; every schema change goes in that file.
-- **Pages (repo root):** `index.html` (public landing), `login.html`, `register.html`, `reset.html`, `marketplace.html`, `product.html`, `sell.html` (edit mode via `?id=`), `dashboard.html` (my listings, stats), `profile.html`, `how-it-works.html`, `about.html`, `faq.html`, `privacy.html`, `terms.html`, `404.html` (served by Cloudflare for missing URLs).
+- **Pages (repo root):** `index.html` (public landing), `login.html`, `register.html`, `reset.html`, `marketplace.html`, `product.html`, `sell.html` (edit mode via `?id=`), `dashboard.html` (my listings, stats, saved items), `profile.html`, `seller.html?id=`, `wanted.html`, `messages.html?c=`, `admin.html`, `offline.html` (PWA fallback), `how-it-works.html`, `about.html`, `faq.html`, `privacy.html`, `terms.html`, `404.html` (served by Cloudflare for missing URLs).
 - **Shared code:** `src/lib/supabase.js` (client, `requireUser`, `nextPage`, `showMessage`, `busy`), `src/lib/layout.js` (header/footer injected into `#site-header`/`#site-footer`, `productCard`, `skeletonCards`, `stateBlock`, `icon`, formatters), `src/styles/main.css` (the design system), `src/icons.svg` (Lucide subset; add a symbol there before using a new icon).
+- **App (PWA):** `manifest.json`, `sw.js` (offline fallback only, never caches data), `icons/`.
+- **Migrations:** `supabase/schema.sql` first, then `supabase/migrations/*.sql` in date order. New DB changes go in a new dated file there.
 - **Paths:** root-absolute (`/src/...`, `/marketplace.html`) in shared code and 404 so they work at any URL.
 - **Design system:** tokens at the top of `main.css` (teal `--brand`, sunflower `--accent`, warm neutrals, Plus Jakarta Sans). Use existing classes (`.btn .btn-primary/.btn-secondary/...`, `.input`, `.select`, `.card`, `.badge-*`, `.state`, `.pcard`) — don't style pages one-off.
-- **Honesty rule:** UI copy must match real features. No wishlist, location, in-app chat, payments or Google login exist — don't show them. Listings are visible only to signed-in students (RLS), so the landing page shows a sign-in prompt instead of listings when logged out.
+- **Honesty rule:** UI copy must match real features. Online payments, Google login, maps and email alerts don't exist — don't show them. Listings are visible only to signed-in students (RLS), so the landing page shows a sign-in prompt instead of listings when logged out.
 - **Config:** Supabase URL + anon key live in `src/lib/supabase.js` (public-safe). No env vars in the frontend. GitHub Actions uses secrets `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
 - **Roll numbers:** regex `^[0-9]{4}(CSE|CSDS|CSAI|CSIT)[0-9]{3}$`, enforced in the DB (`allowed_students`) and in `src/lib/supabase.js` (`ROLL_NO_PATTERN`). New course → update both.
 - **Git:** repo at https://github.com/nitesh785/P2P_Campus_marketplace, default branch `main`. Branching and review rules are TBD by the team.
@@ -107,9 +114,12 @@ Coding style, tools, communication and workflow preferences go here as teammates
 - **Done:** Phase 5 code: `my-listings.html` (now replaced by `dashboard.html`) (edit, mark sold/available, delete with photo cleanup), edit mode in `sell.html`.
 - **Done:** Phase 5 tested by owner; Phase 6 API security checks passed (logged-out reads/writes blocked, no secrets in repo); keep-alive workflow added.
 - **Not done yet:** Cloudflare Pages deployment; mobile/keyboard check; demo data.
-- **Next step:** owner tests the redesigned site end to end on the live URL (desktop + phone).
+- **Next step:** owner runs `supabase/migrations/2026-09-27-features.sql`, makes the team admins, enables Cloudflare Web Analytics; then Claude pushes the feature batch.
 
 ## Gotchas (setup lessons)
+
+- **Start-up order in page scripts:** call the page's load functions at the *end* of the module. Calling them earlier throws a silent `ReferenceError` if they use a `const` helper defined further down (this blanked the admin stats once).
+- **Git Bash heredocs** break on some Unicode characters (curly quotes, emoji). Write scripts to a file instead.
 
 - **No `type="number"` inputs:** the mouse wheel changes their value while scrolling (a user saw 1250 become 1233). Use `type="text" inputmode="numeric" pattern="[0-9]*"` and strip non-digits on input.
 - **Camera on phones:** a file input with `multiple` opens only the gallery on Android. `sell.html` has a separate `capture="environment"` input for the camera, shown only on touch screens.
@@ -144,3 +154,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-27 | Fixed price inputs changing on mouse-wheel scroll (text + numeric keypad); added "Take photo" camera button on the sell page |
 | 2026-09-27 | Added listing quantity (DB column via migration, sell form, cards, product page, dashboard "Sold one") |
 | 2026-09-27 | Added suggestion.md (free-tier feature ideas, recommended next 3) |
+| 2026-09-27 | Feature batch: saved items, reports + admin page, pickup location, negotiable/free filter, 60-day expiry + renew, wanted board, seller profiles, in-app chat, seller ratings, share, recently viewed, typo-tolerant search, installable app, dark mode |

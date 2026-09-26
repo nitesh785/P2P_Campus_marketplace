@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sell an item · Campus Marketplace</title>
   <link rel="stylesheet" href="/src/styles/main.css">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0f766e">
 </head>
 <body>
 <div id="site-header"></div>
@@ -14,7 +18,7 @@
     <div class="page-head">
       <div>
         <h1 id="heading">Sell an item</h1>
-        <p id="subheading">Add a few details and photos. It goes live on the marketplace right away.</p>
+        <p id="subheading">Add a few details and photos. It goes live right away and stays up for 60 days.</p>
       </div>
     </div>
 
@@ -55,6 +59,16 @@
                 <span class="field-label">Quantity</span>
                 <input class="input" name="quantity" type="text" required inputmode="numeric" pattern="[0-9]{1,2}" maxlength="2" autocomplete="off" value="1">
                 <span class="field-hint">How many you have to sell, 1–99.</span>
+              </label>
+            </div>
+            <div class="form-grid-2">
+              <label class="field">
+                <span class="field-label">Pickup location</span>
+                <select class="select" name="pickup_location"><option value="">Decide with the buyer</option></select>
+              </label>
+              <label class="check" style="align-self: end; padding-bottom: 12px">
+                <input type="checkbox" name="negotiable">
+                <span>Price is negotiable</span>
               </label>
             </div>
           </div>
@@ -109,7 +123,7 @@
 
 <script type="module">
   import { supabase, requireUser, showMessage, busy } from '/src/lib/supabase.js';
-  import { icon, imageUrl, productCard, stateBlock } from '/src/lib/layout.js';
+  import { icon, imageUrl, productCard, stateBlock, PICKUP_LOCATIONS, renewedExpiry } from '/src/lib/layout.js';
 
   const MAX_PHOTOS = 3;
   const user = await requireUser();
@@ -126,6 +140,7 @@
     supabase.from('profiles').select('name').eq('id', user.id).single(),
   ]);
   for (const c of categories ?? []) f.category_id.add(new Option(c.name, c.id));
+  for (const place of PICKUP_LOCATIONS) f.pickup_location.add(new Option(place, place));
 
   // Edit mode: sell.html?id=<product id> loads the seller's own listing into the form.
   const editId = new URLSearchParams(location.search).get('id');
@@ -153,6 +168,8 @@
       f.category_id.value = data.category_id;
       f.condition.value = data.condition;
       f.quantity.value = data.quantity ?? 1;
+      f.pickup_location.value = data.pickup_location ?? '';
+      f.negotiable.checked = data.negotiable;
       photos = data.image_paths.map((path) => ({ path, src: imageUrl(path) }));
     }
   }
@@ -201,6 +218,8 @@
       title: f.title.value.trim(),
       price: f.price.value,
       quantity: Number(f.quantity.value),
+      negotiable: f.negotiable.checked,
+      pickup_location: f.pickup_location.value,
       condition: f.condition.value,
       categories: { name: option?.value ? option.text : '' },
       profiles: { name: me?.name },
@@ -267,6 +286,9 @@
           description: f.description.value.trim(),
           price: Number(f.price.value),
           quantity,
+          pickup_location: f.pickup_location.value || null,
+          negotiable: f.negotiable.checked,
+          expires_at: renewedExpiry(), // saving keeps the listing live for another 60 days
           category_id: Number(f.category_id.value),
           condition: f.condition.value,
           image_paths: imagePaths,

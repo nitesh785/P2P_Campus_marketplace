@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Messages · Campus Marketplace</title>
+  <link rel="stylesheet" href="/src/styles/main.css">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0f766e">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main id="main" class="page page-tight">
+  <div class="container">
+    <div class="chat" id="chat" data-view="list">
+      <aside class="chat-list">
+        <div class="chat-list-head"><h1>Messages</h1></div>
+        <ul id="conversations" aria-label="Conversations"></ul>
+      </aside>
+
+      <section class="chat-thread" aria-live="polite">
+        <div id="thread-empty" class="chat-placeholder">
+          <div class="state-icon"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#message-square-text"></use></svg></div>
+          <p class="muted">Select a conversation to read it.</p>
+        </div>
+
+        <div id="thread" class="thread" hidden>
+          <header class="thread-head">
+            <button type="button" class="btn btn-ghost btn-icon thread-back" id="back" aria-label="Back to conversations"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#arrow-left"></use></svg></button>
+            <span class="avatar" id="t-avatar"></span>
+            <div class="thread-who">
+              <strong id="t-name"></strong>
+              <a id="t-product" class="small"></a>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="rate" hidden><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#star"></use></svg>Rate seller</button>
+          </header>
+          <ol class="bubbles" id="bubbles"></ol>
+          <form class="composer" id="composer">
+            <label class="visually-hidden" for="body">Message</label>
+            <textarea class="textarea" id="body" name="body" rows="1" maxlength="1000" required placeholder="Write a message…"></textarea>
+            <button class="btn btn-primary btn-icon" type="submit" aria-label="Send"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#send"></use></svg></button>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<p id="msg" class="toast" role="status" aria-live="polite"></p>
+
+<dialog id="review" class="modal" aria-labelledby="review-title">
+  <form method="dialog" class="form" id="review-form">
+    <div>
+      <h2 id="review-title">Rate <span id="r-name"></span></h2>
+      <p class="muted small">Your rating is shown on the seller's profile with your name.</p>
+    </div>
+    <fieldset class="star-input">
+      <legend class="field-label">Rating</legend>
+      <input type="radio" name="rating" id="s5" value="5" required><label for="s5" aria-label="5 stars">★</label>
+      <input type="radio" name="rating" id="s4" value="4"><label for="s4" aria-label="4 stars">★</label>
+      <input type="radio" name="rating" id="s3" value="3"><label for="s3" aria-label="3 stars">★</label>
+      <input type="radio" name="rating" id="s2" value="2"><label for="s2" aria-label="2 stars">★</label>
+      <input type="radio" name="rating" id="s1" value="1"><label for="s1" aria-label="1 star">★</label>
+    </fieldset>
+    <label class="field">
+      <span class="field-label">Comment (optional)</span>
+      <textarea class="textarea" name="comment" maxlength="300" rows="3" placeholder="How was the deal?"></textarea>
+    </label>
+    <div class="modal-actions" style="margin-top: 0">
+      <button class="btn btn-secondary" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn btn-primary" value="send">Submit rating</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module">
+  import { supabase, requireUser, showMessage } from '/src/lib/supabase.js';
+  import { initials, imageUrl, stateBlock } from '/src/lib/layout.js';
+
+  const user = await requireUser();
+  const $ = (id) => document.getElementById(id);
+  const chat = $('chat');
+  const list = $('conversations');
+  const bubbles = $('bubbles');
+  const composer = $('composer');
+  let conversations = [];
+  let current = null;        // open conversation
+  const shown = new Set();   // message ids already on screen (insert response + realtime both deliver)
+
+  const role = (c) => (c.buyer_id === user.id ? 'buyer' : 'seller');
+  const other = (c) => (role(c) === 'buyer' ? c.seller : c.buyer);
+  const unread = (c) => c.last_message_at > c[`${role(c)}_last_read_at`];
+
+  function timeLabel(iso) {
+    const d = new Date(iso);
+    return d.toDateString() === new Date().toDateString()
+      ? d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })
+      : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  }
+
+  async function loadConversations() {
+    const { data, error } = await supabase.from('conversations')
+      .select(`id, product_id, product_title, buyer_id, seller_id, last_message_at, buyer_last_read_at, seller_last_read_at,
+               buyer:profiles!conversations_buyer_id_fkey(name), seller:profiles!conversations_seller_id_fkey(name),
+               products(image_paths)`)
+      .order('last_message_at', { ascending: false });
+    if (error) {
+      return list.replaceChildren(stateBlock({ kind: 'error', iconName: 'triangle-alert', title: 'Something went wrong', text: 'We could not load your messages.', action: { label: 'Try again', onClick: () => location.reload() } }));
+    }
+    conversations = data;
+    renderList();
+  }
+
+  function renderList() {
+    if (!conversations.length) {
+      return list.replaceChildren(stateBlock({ iconName: 'message-square-text', title: 'No messages yet', text: 'Open any listing and tap "Message seller" to start a conversation.', action: { label: 'Browse marketplace', href: 'marketplace.html' } }));
+    }
+    list.replaceChildren(...conversations.map((c) => {
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <a class="conv">
+          <img alt="">
+          <span class="conv-text"><strong></strong><span class="conv-product"></span></span>
+          <span class="conv-meta"><time></time><span class="unread-dot" hidden></span></span>
+        </a>`;
+      const a = li.querySelector('a');
+      a.href = `?c=${c.id}`;
+      if (current?.id === c.id) a.setAttribute('aria-current', 'true');
+      const img = li.querySelector('img');
+      if (c.products?.image_paths?.[0]) img.src = imageUrl(c.products.image_paths[0]);
+      else img.hidden = true;
+      li.querySelector('strong').textContent = other(c)?.name ?? 'Student';
+      li.querySelector('.conv-product').textContent = `${role(c) === 'buyer' ? 'You asked about' : 'Asking about'} ${c.product_title}`;
+      li.querySelector('time').textContent = timeLabel(c.last_message_at);
+      li.querySelector('.unread-dot').hidden = !unread(c);
+      a.addEventListener('click', (e) => { e.preventDefault(); open(c.id, true); });
+      return li;
+    }));
+  }
+
+  function bubble(m) {
+    shown.add(m.id);
+    const li = document.createElement('li');
+    li.className = m.sender_id === user.id ? 'mine' : 'theirs';
+    li.innerHTML = '<p></p><time></time>';
+    li.querySelector('p').textContent = m.body;
+    li.querySelector('time').textContent = timeLabel(m.created_at);
+    return li;
+  }
+
+  const scrollDown = () => { bubbles.scrollTop = bubbles.scrollHeight; };
+
+  async function open(id, push) {
+    current = conversations.find((c) => c.id === id);
+    if (!current) return;
+    if (push) history.pushState(null, '', `?c=${id}`);
+    chat.dataset.view = 'thread';
+    $('thread-empty').hidden = true;
+    $('thread').hidden = false;
+
+    const person = other(current)?.name ?? 'Student';
+    $('t-avatar').textContent = initials(person);
+    $('t-name').textContent = person;
+    $('t-product').textContent = current.product_title;
+    if (current.product_id) $('t-product').href = `product.html?id=${current.product_id}`;
+    else $('t-product').removeAttribute('href');
+
+    shown.clear();
+    bubbles.replaceChildren();
+    const { data } = await supabase.from('messages').select('id, sender_id, body, created_at')
+      .eq('conversation_id', id).order('created_at').limit(500);
+    bubbles.replaceChildren(...(data ?? []).map(bubble));
+    if (!data?.length) bubbles.innerHTML = '<li class="hint">Say hi and ask if the item is still available.</li>';
+    scrollDown();
+    markRead();
+    updateRateButton(data ?? []);
+    renderList();
+    if (matchMedia('(pointer: fine)').matches) $('body').focus();
+  }
+
+  async function markRead() {
+    const column = `${role(current)}_last_read_at`;
+    const now = new Date().toISOString();
+    current[column] = now;
+    await supabase.from('conversations').update({ [column]: now }).eq('id', current.id);
+  }
+
+  // Buyers can rate a seller once the seller has replied; one rating per conversation.
+  async function updateRateButton(messages) {
+    const rate = $('rate');
+    rate.hidden = true;
+    if (role(current) !== 'buyer' || !messages.some((m) => m.sender_id === current.seller_id)) return;
+    const { data } = await supabase.from('reviews').select('id').eq('conversation_id', current.id).maybeSingle();
+    rate.hidden = Boolean(data);
+  }
+
+  // Send
+  composer.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const body = composer.elements.body.value.trim();
+    if (!body || !current) return;
+    composer.elements.body.value = '';
+    const { data, error } = await supabase.from('messages')
+      .insert({ conversation_id: current.id, body }).select('id, sender_id, body, created_at').single();
+    if (error) {
+      composer.elements.body.value = body;
+      return showMessage(error.message.includes('row-level security') ? 'You cannot send messages right now. Your account may be blocked.' : error.message);
+    }
+    bubbles.querySelector('.hint')?.remove();
+    if (!shown.has(data.id)) bubbles.append(bubble(data));
+    scrollDown();
+    current.last_message_at = data.created_at;
+    conversations.sort((a, b) => b.last_message_at.localeCompare(a.last_message_at));
+    renderList();
+  });
+  // Enter sends, Shift+Enter makes a new line (on computers)
+  composer.elements.body.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer: fine)').matches) { e.preventDefault(); composer.requestSubmit(); }
+  });
+
+  // Live updates: Realtime only delivers messages from conversations this user belongs to (RLS).
+  supabase.channel('my-messages')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async ({ new: m }) => {
+      if (shown.has(m.id)) return;
+      let c = conversations.find((x) => x.id === m.conversation_id);
+      if (!c) { await loadConversations(); c = conversations.find((x) => x.id === m.conversation_id); }
+      if (!c) return;
+      c.last_message_at = m.created_at;
+      conversations.sort((a, b) => b.last_message_at.localeCompare(a.last_message_at));
+      if (current?.id === m.conversation_id) {
+        bubbles.querySelector('.hint')?.remove();
+        bubbles.append(bubble(m));
+        scrollDown();
+        markRead();
+        if (m.sender_id === current.seller_id) updateRateButton([m]);
+      }
+      renderList();
+    })
+    .subscribe();
+
+  // Back (phones) and browser history
+  $('back').addEventListener('click', () => { history.pushState(null, '', location.pathname); showList(); });
+  addEventListener('popstate', () => {
+    const id = new URLSearchParams(location.search).get('c');
+    id ? open(id, false) : showList();
+  });
+  function showList() {
+    current = null;
+    chat.dataset.view = 'list';
+    $('thread').hidden = true;
+    $('thread-empty').hidden = false;
+    renderList();
+  }
+
+  // Rating
+  const reviewDialog = $('review');
+  const reviewForm = $('review-form');
+  $('rate').addEventListener('click', () => {
+    reviewForm.reset();
+    $('r-name').textContent = other(current)?.name ?? 'seller';
+    reviewDialog.showModal();
+  });
+  reviewDialog.addEventListener('close', async () => {
+    if (reviewDialog.returnValue !== 'send') return;
+    const { error } = await supabase.from('reviews').insert({
+      seller_id: current.seller_id,
+      conversation_id: current.id,
+      rating: Number(reviewForm.elements.rating.value),
+      comment: reviewForm.elements.comment.value.trim() || null,
+    });
+    if (error) return showMessage(error.code === '23505' ? 'You have already rated this seller for this item.' : error.message);
+    $('rate').hidden = true;
+    showMessage('Thanks for rating!', true);
+  });
+
+  await loadConversations();
+  const start = new URLSearchParams(location.search).get('c');
+  if (start) open(start, false);
+</script>
+</body>
+</html>

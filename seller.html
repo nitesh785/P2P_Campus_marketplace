@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seller · Campus Marketplace</title>
+  <link rel="stylesheet" href="/src/styles/main.css">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0f766e">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main id="main" class="page">
+  <div class="container stack" style="gap: 32px">
+    <div id="missing" hidden></div>
+
+    <section class="seller-hero card" id="hero">
+      <span class="avatar avatar-lg" id="avatar">…</span>
+      <div class="stack" style="gap: 6px">
+        <h1 id="name">Seller</h1>
+        <p class="muted" id="joined"></p>
+        <p id="rating" class="rating-line">No reviews yet</p>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head-row" style="margin-bottom: 16px">
+        <h2 style="font-size: 1.35rem">Listings</h2>
+      </div>
+      <ul class="product-grid" id="listings"></ul>
+    </section>
+
+    <section id="reviews-section" hidden>
+      <div class="section-head-row" style="margin-bottom: 16px">
+        <h2 style="font-size: 1.35rem">Reviews</h2>
+      </div>
+      <ul class="reviews" id="reviews"></ul>
+    </section>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+
+<script type="module">
+  import { supabase, requireUser } from '/src/lib/supabase.js';
+  import { productCard, skeletonCards, stateBlock, initials, formatDate, stars, nowIso, savedIds } from '/src/lib/layout.js';
+
+  const user = await requireUser();
+  const id = new URLSearchParams(location.search).get('id') ?? '';
+  const $ = (elId) => document.getElementById(elId);
+  $('listings').replaceChildren(...skeletonCards(4));
+
+  const [{ data: seller }, { data: listings }, { data: reviews }, saved] = await Promise.all([
+    supabase.from('profiles').select('id, name, created_at').eq('id', id).maybeSingle(),
+    supabase.from('products')
+      .select('id, title, price, quantity, negotiable, pickup_location, condition, image_paths, categories(name)')
+      .eq('seller_id', id).eq('status', 'available').gt('expires_at', nowIso())
+      .order('created_at', { ascending: false }).limit(40),
+    supabase.from('reviews').select('rating, comment, created_at, reviewer:profiles!reviews_reviewer_id_fkey(name)')
+      .eq('seller_id', id).order('created_at', { ascending: false }).limit(50),
+    savedIds(),
+  ]);
+
+  if (!seller) {
+    $('hero').hidden = true;
+    $('listings').closest('section').hidden = true;
+    $('missing').hidden = false;
+    $('missing').replaceChildren(stateBlock({ tag: 'div', iconName: 'search', title: 'Seller not found', text: 'This account may have been removed.', action: { label: 'Back to marketplace', href: 'marketplace.html' } }));
+  } else {
+    const mine = seller.id === user.id;
+    document.title = `${seller.name} · Campus Marketplace`;
+    $('avatar').textContent = initials(seller.name);
+    $('name').textContent = mine ? `${seller.name} (you)` : seller.name;
+    $('joined').textContent = `Student seller · joined ${formatDate(seller.created_at)}`;
+
+    if (reviews?.length) {
+      const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+      $('rating').textContent = `${stars(avg)} ${avg.toFixed(1)} from ${reviews.length} ${reviews.length === 1 ? 'review' : 'reviews'}`;
+      $('reviews').replaceChildren(...reviews.map((r) => {
+        const li = document.createElement('li');
+        li.className = 'review';
+        li.innerHTML = '<div class="review-head"><span class="stars"></span><strong></strong><time class="muted small"></time></div><p></p>';
+        li.querySelector('.stars').textContent = stars(r.rating);
+        li.querySelector('.stars').setAttribute('aria-label', `${r.rating} out of 5`);
+        li.querySelector('strong').textContent = r.reviewer?.name ?? 'Student';
+        li.querySelector('time').textContent = formatDate(r.created_at);
+        if (r.comment) li.querySelector('p').textContent = r.comment;
+        else li.querySelector('p').remove();
+        return li;
+      }));
+      $('reviews-section').hidden = false;
+    }
+
+    $('listings').replaceChildren(...(listings?.length
+      ? listings.map((p) => productCard(p, { saved: mine ? undefined : saved }))
+      : [stateBlock({ iconName: 'package', title: 'Nothing for sale right now', text: mine ? 'Your active listings will show here.' : 'Check back later.' })]));
+  }
+</script>
+</body>
+</html>

@@ -1,5 +1,7 @@
 # Feature Suggestions (Zero Cost)
 
+> **Status (27 Sep 2026):** everything below has been built except #15 (email alerts), which was skipped on purpose. Listing expiry (#12) uses an `expires_at` date instead of a scheduled job, and photos of old listings are not auto-deleted. Visitor analytics (#14) is a toggle in Cloudflare.
+
 Ideas for what to build next. Every idea stays within the free tiers we already use (Supabase, Cloudflare Pages, Brevo, GitHub Actions) and needs no credit card. Each one lists its effort, what it uses from the free limits, and whether it needs a database change.
 
 **Effort:** S = a few hours · M = one to two days · L = a week or more (for a first-year team)

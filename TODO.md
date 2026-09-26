@@ -105,11 +105,21 @@ Tick items as you finish them (`- [x]`). Items marked **(you)** need the project
 - [x] Listing quantity (sell form, cards, product page, dashboard "Sold one")
 - [x] **(you)** Run the quantity migration in Supabase (end of `supabase/schema.sql`)
 
+## Phase 10: Free-tier feature batch (suggestion.md)
+
+- [x] Saved items, share button, recently viewed, seller profile pages
+- [x] Pickup location, negotiable tag, free-items filter, typo-tolerant search
+- [x] Reports + admin page (block/unblock, remove listings)
+- [x] Wanted board
+- [x] In-app chat (Messages) with unread badge; seller ratings after a chat
+- [x] Listings expire after 60 days; Renew on the dashboard
+- [x] Installable app (manifest, icons, offline page), dark mode
+- [ ] **(you)** Run `supabase/migrations/2026-09-27-features.sql` in Supabase
+- [ ] **(you)** Make team members admins (SQL in the handover message / README)
+- [ ] **(you)** Turn on Cloudflare Web Analytics for the Pages project
+- [ ] **(you)** Test chat between two accounts, a report, and the admin page
+
 ## Post-MVP backlog
 
-- [ ] Report listing + admin role
-- [ ] Wishlist
 - [ ] Auto-delete sold listings older than 60 days
-- [ ] Hostel/location filter
-- [ ] PWA (installable app)
-- [ ] Supabase Realtime chat
+- [ ] Email alerts for new listings in a category (skipped for now)

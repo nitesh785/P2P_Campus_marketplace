@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin · Campus Marketplace</title>
+  <link rel="stylesheet" href="/src/styles/main.css">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0f766e">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main id="main" class="page">
+  <div class="container stack" style="gap: 32px">
+    <div id="denied" hidden></div>
+
+    <div id="panel" class="stack" style="gap: 32px" hidden>
+      <div class="page-head" style="margin: 0">
+        <div>
+          <span class="eyebrow"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#shield"></use></svg>Admin</span>
+          <h1 style="margin-top: 8px">Moderation</h1>
+          <p>Review reports, remove listings and manage accounts. The student roll list is managed in the Supabase dashboard.</p>
+        </div>
+      </div>
+
+      <dl class="stats stats-4">
+        <div class="stat"><dt>Students</dt><dd id="s-users">–</dd></div>
+        <div class="stat"><dt>Active listings</dt><dd id="s-active">–</dd></div>
+        <div class="stat"><dt>Sold</dt><dd id="s-sold">–</dd></div>
+        <div class="stat"><dt>Open reports</dt><dd id="s-reports">–</dd></div>
+      </dl>
+
+      <section>
+        <h2 class="admin-h">Open reports</h2>
+        <ul class="listing-rows" id="reports"></ul>
+      </section>
+
+      <section>
+        <h2 class="admin-h">Students</h2>
+        <label class="input-icon" style="max-width: 420px; margin-bottom: 12px">
+          <span class="visually-hidden">Search students</span>
+          <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#search"></use></svg>
+          <input class="input" id="user-search" type="search" placeholder="Search by name or roll number">
+        </label>
+        <ul class="listing-rows" id="users"></ul>
+      </section>
+
+      <section>
+        <h2 class="admin-h">Recent listings</h2>
+        <ul class="listing-rows" id="listings"></ul>
+      </section>
+    </div>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+<p id="msg" class="toast" role="status" aria-live="polite"></p>
+
+<script type="module">
+  import { supabase, requireUser, showMessage } from '/src/lib/supabase.js';
+  import { icon, imageUrl, formatDate, formatPrice, initials, stateBlock, meReady, REPORT_REASONS } from '/src/lib/layout.js';
+
+  await requireUser();
+  const me = await meReady;
+  const $ = (id) => document.getElementById(id);
+
+  const count = async (table, build = (q) => q) => {
+    const { count: n } = await build(supabase.from(table).select('*', { count: 'exact', head: true }));
+    return n ?? '–';
+  };
+
+  async function loadStats() {
+    const now = new Date().toISOString();
+    const [users, active, sold, reports] = await Promise.all([
+      count('profiles'),
+      count('products', (q) => q.eq('status', 'available').gt('expires_at', now)),
+      count('products', (q) => q.eq('status', 'sold')),
+      count('reports', (q) => q.eq('status', 'open')),
+    ]);
+    $('s-users').textContent = users;
+    $('s-active').textContent = active;
+    $('s-sold').textContent = sold;
+    $('s-reports').textContent = reports;
+  }
+
+  function row({ image, title, href, meta, actions }) {
+    const li = document.createElement('li');
+    li.className = 'listing-row';
+    li.innerHTML = `<img alt=""><div class="info"><a></a><div class="meta"></div></div><div class="row-actions"></div>`;
+    const img = li.querySelector('img');
+    if (image) img.src = image; else img.replaceWith(Object.assign(document.createElement('span'), { className: 'avatar', textContent: initials(title) }));
+    const a = li.querySelector('.info a');
+    a.textContent = title;
+    if (href) a.href = href; else a.removeAttribute('href');
+    li.querySelector('.meta').append(...meta);
+    li.querySelector('.row-actions').append(...actions);
+    return li;
+  }
+  const text = (t, cls = '') => Object.assign(document.createElement('span'), { textContent: t, className: cls });
+  function btn(variant, iconName, label, onClick) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `btn ${variant} btn-sm`;
+    b.innerHTML = icon(iconName) + label;
+    b.addEventListener('click', async () => { b.disabled = true; await onClick(); b.disabled = false; });
+    return b;
+  }
+
+  async function removeListing(p) {
+    if (!confirm(`Remove "${p.title}" permanently? Its photos are deleted too.`)) return false;
+    const { error } = await supabase.from('products').delete().eq('id', p.id);
+    if (error) { showMessage(error.message); return false; }
+    await supabase.storage.from('product-images').remove(p.image_paths);
+    showMessage('Listing removed.', true);
+    return true;
+  }
+
+  async function setBlocked(userId, name, value) {
+    if (value && !confirm(`Block ${name}? They won't be able to post listings, requests or messages.`)) return false;
+    const { error } = await supabase.rpc('admin_set_blocked', { target: userId, value });
+    if (error) { showMessage(error.message); return false; }
+    showMessage(value ? `${name} is blocked.` : `${name} is unblocked.`, true);
+    return true;
+  }
+
+  async function loadReports() {
+    const { data, error } = await supabase.from('reports')
+      .select(`id, reason, details, created_at, reporter:profiles!reports_reporter_id_fkey(name),
+               product:products(id, title, image_paths, seller_id, seller:profiles(name))`)
+      .eq('status', 'open').order('created_at', { ascending: false }).limit(50);
+    if (error) return $('reports').replaceChildren(stateBlock({ kind: 'error', iconName: 'triangle-alert', title: 'Could not load reports', text: error.message }));
+    $('reports').replaceChildren(...(data.length ? data.map((r) => {
+      const p = r.product;
+      const meta = [text(REPORT_REASONS[r.reason] ?? r.reason, 'badge badge-error'), text(`by ${r.reporter?.name ?? 'student'} · ${formatDate(r.created_at)}`)];
+      if (r.details) meta.push(text(`“${r.details}”`));
+      const li = row({
+        image: p?.image_paths?.[0] && imageUrl(p.image_paths[0]),
+        title: p?.title ?? 'Deleted listing',
+        href: p && `product.html?id=${p.id}`,
+        meta,
+        actions: [
+          btn('btn-danger', 'trash-2', 'Remove listing', async () => { if (await removeListing(p)) { li.remove(); loadStats(); } }),
+          btn('btn-secondary', 'ban', 'Block seller', async () => { if (await setBlocked(p.seller_id, p.seller?.name ?? 'Seller', true)) loadUsers(); }),
+          btn('btn-secondary', 'check', 'Dismiss', async () => {
+            const { error: e } = await supabase.from('reports').update({ status: 'resolved' }).eq('id', r.id);
+            if (e) return showMessage(e.message);
+            li.remove();
+            loadStats();
+          }),
+        ],
+      });
+      return li;
+    }) : [stateBlock({ iconName: 'circle-check-big', title: 'No open reports', text: 'All caught up.' })]));
+  }
+
+  let searchTimer;
+  $('user-search').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(loadUsers, 300); });
+
+  async function loadUsers() {
+    const term = $('user-search').value.trim().replace(/[^\p{L}\p{N} ]/gu, ''); // keep the filter syntax safe
+    let q = supabase.from('profiles').select('id, name, roll_no, blocked, is_admin, created_at')
+      .order('created_at', { ascending: false }).limit(30);
+    if (term) q = q.or(`name.ilike.*${term}*,roll_no.ilike.*${term}*`);
+    const { data, error } = await q;
+    if (error) return $('users').replaceChildren(stateBlock({ kind: 'error', iconName: 'triangle-alert', title: 'Could not load students', text: error.message }));
+    $('users').replaceChildren(...(data.length ? data.map((u) => {
+      const meta = [text(u.roll_no, 'badge badge-brand'), text(`Joined ${formatDate(u.created_at)}`)];
+      if (u.blocked) meta.push(text('Blocked', 'badge badge-error'));
+      if (u.is_admin) meta.push(text('Admin', 'badge badge-accent'));
+      const actions = u.is_admin ? [] : [u.blocked
+        ? btn('btn-secondary', 'check', 'Unblock', async () => { if (await setBlocked(u.id, u.name, false)) loadUsers(); })
+        : btn('btn-danger', 'ban', 'Block', async () => { if (await setBlocked(u.id, u.name, true)) loadUsers(); })];
+      return row({ title: u.name, href: `seller.html?id=${u.id}`, meta, actions });
+    }) : [stateBlock({ iconName: 'users', title: 'No students found', text: 'Try another name or roll number.' })]));
+  }
+
+  async function loadListings() {
+    const { data } = await supabase.from('products')
+      .select('id, title, price, status, image_paths, created_at, seller:profiles(name)')
+      .order('created_at', { ascending: false }).limit(30);
+    $('listings').replaceChildren(...(data?.length ? data.map((p) => {
+      const li = row({
+        image: imageUrl(p.image_paths[0]),
+        title: p.title,
+        href: `product.html?id=${p.id}`,
+        meta: [text(formatPrice(p.price)), text(p.status === 'sold' ? 'Sold' : 'Available', `badge ${p.status === 'sold' ? 'badge-error' : 'badge-ok'}`), text(`${p.seller?.name ?? ''} · ${formatDate(p.created_at)}`)],
+        actions: [btn('btn-danger', 'trash-2', 'Remove', async () => { if (await removeListing(p)) { li.remove(); loadStats(); } })],
+      });
+      return li;
+    }) : [stateBlock({ iconName: 'package', title: 'No listings yet', text: 'Listings will appear here.' })]));
+  }
+
+  // The database enforces admin rights; this check only decides what to show.
+  if (!me?.is_admin) {
+    $('denied').hidden = false;
+    $('denied').replaceChildren(stateBlock({ tag: 'div', iconName: 'shield', title: 'Admins only', text: 'This page is for the project team.', action: { label: 'Back to marketplace', href: 'marketplace.html' } }));
+  } else {
+    $('panel').hidden = false;
+    loadStats();
+    loadReports();
+    loadUsers();
+    loadListings();
+  }
+</script>
+</body>
+</html>

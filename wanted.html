@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wanted · Campus Marketplace</title>
+  <link rel="stylesheet" href="/src/styles/main.css">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0f766e">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main id="main" class="page">
+  <div class="container">
+    <div class="page-head">
+      <div>
+        <h1>Wanted</h1>
+        <p>Looking for something? Post it here and students who have it can reach you.</p>
+      </div>
+      <button type="button" class="btn btn-primary" id="new"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#megaphone"></use></svg>Post a request</button>
+    </div>
+
+    <div class="toolbar">
+      <div class="toolbar-row wanted-toolbar">
+        <select class="select" id="category" aria-label="Category"><option value="">All categories</option></select>
+        <label class="check" style="align-self: center"><input type="checkbox" id="mine">Only my requests</label>
+      </div>
+    </div>
+
+    <ul class="wanted-grid" id="list" aria-busy="true"></ul>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+<p id="msg" class="toast" role="status" aria-live="polite"></p>
+
+<dialog id="compose" class="modal" aria-labelledby="compose-title">
+  <form method="dialog" class="form" id="compose-form">
+    <h2 id="compose-title">Post a request</h2>
+    <label class="field">
+      <span class="field-label">What are you looking for?</span>
+      <input class="input" name="title" required minlength="3" maxlength="100" placeholder="e.g. Engineering Graphics textbook">
+    </label>
+    <div class="form-grid-2">
+      <label class="field">
+        <span class="field-label">Category</span>
+        <select class="select" name="category_id"><option value="">Any</option></select>
+      </label>
+      <label class="field">
+        <span class="field-label">Max budget (₹)</span>
+        <input class="input" name="max_budget" type="text" inputmode="numeric" pattern="[0-9]{1,6}" maxlength="6" autocomplete="off" placeholder="Optional">
+      </label>
+    </div>
+    <label class="field">
+      <span class="field-label">Details (optional)</span>
+      <textarea class="textarea" name="details" maxlength="500" rows="3" placeholder="Edition, condition you'd accept, when you need it"></textarea>
+    </label>
+    <p class="field-hint">Students who have it will contact you on your WhatsApp number.</p>
+    <div class="modal-actions" style="margin-top: 0">
+      <button class="btn btn-secondary" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn btn-primary" value="post">Post request</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module">
+  import { supabase, requireUser, showMessage } from '/src/lib/supabase.js';
+  import { icon, categoryIcon, initials, formatDate, formatPrice, whatsappLink, stateBlock, meReady } from '/src/lib/layout.js';
+
+  const user = await requireUser();
+  const $ = (id) => document.getElementById(id);
+  const list = $('list');
+  const dialog = $('compose');
+  const form = $('compose-form');
+  const f = form.elements; // form.title would be the form's own title attribute
+
+  const { data: categories } = await supabase.from('categories').select('id, name').order('id');
+  for (const c of categories ?? []) {
+    $('category').add(new Option(c.name, c.id));
+    f.category_id.add(new Option(c.name, c.id));
+  }
+
+  async function load() {
+    list.setAttribute('aria-busy', 'true');
+    let q = supabase.from('wanted_posts')
+      .select('id, user_id, title, details, max_budget, status, created_at, categories(name), profiles(name, phone)')
+      .order('created_at', { ascending: false }).limit(60);
+    if ($('mine').checked) q = q.eq('user_id', user.id);
+    else q = q.eq('status', 'open');
+    if ($('category').value) q = q.eq('category_id', Number($('category').value));
+    const { data, error } = await q;
+    list.setAttribute('aria-busy', 'false');
+    if (error) return list.replaceChildren(stateBlock({ kind: 'error', iconName: 'triangle-alert', title: 'Something went wrong', text: 'We could not load requests.', action: { label: 'Try again', onClick: load } }));
+    list.replaceChildren(...(data.length ? data.map(card) : [stateBlock({
+      iconName: 'megaphone', title: $('mine').checked ? "You haven't posted any requests" : 'No requests right now',
+      text: 'Need a book, calculator or cycle? Post a request and let sellers find you.',
+      action: { label: 'Post a request', onClick: openCompose },
+    })]));
+  }
+
+  function card(w) {
+    const mine = w.user_id === user.id;
+    const li = document.createElement('li');
+    li.className = 'wanted-card';
+    li.innerHTML = `
+      <div class="wanted-top">
+        <span class="pcard-cat"></span>
+        <span class="badge"></span>
+      </div>
+      <h3></h3>
+      <p class="wanted-details muted small"></p>
+      <div class="wanted-foot">
+        <span class="pcard-seller" style="border: 0; margin: 0; padding: 0"><span class="avatar"></span><span class="who"></span></span>
+        <div class="row-actions"></div>
+      </div>`;
+    const cat = w.categories?.name;
+    li.querySelector('.pcard-cat').innerHTML = cat ? `${icon(categoryIcon(cat))}<span></span>` : '<span>Any category</span>';
+    li.querySelector('.pcard-cat span').textContent = cat ?? 'Any category';
+    const badge = li.querySelector('.badge');
+    badge.textContent = w.status === 'found' ? 'Found' : w.max_budget != null ? `Budget ${formatPrice(w.max_budget)}` : 'Open';
+    badge.className = `badge ${w.status === 'found' ? 'badge-ok' : 'badge-accent'}`;
+    li.querySelector('h3').textContent = w.title;
+    if (w.details) li.querySelector('.wanted-details').textContent = w.details;
+    else li.querySelector('.wanted-details').remove();
+    li.querySelector('.avatar').textContent = initials(w.profiles.name);
+    li.querySelector('.who').textContent = `${mine ? 'You' : w.profiles.name} · ${formatDate(w.created_at)}`;
+
+    const actions = li.querySelector('.row-actions');
+    if (mine) {
+      if (w.status === 'open') {
+        const found = button('btn-secondary', 'circle-check-big', 'Found it');
+        found.addEventListener('click', async () => {
+          const { error } = await supabase.from('wanted_posts').update({ status: 'found' }).eq('id', w.id);
+          if (error) return showMessage(error.message);
+          showMessage('Marked as found.', true);
+          load();
+        });
+        actions.append(found);
+      }
+      const del = button('btn-danger', 'trash-2', '');
+      del.setAttribute('aria-label', `Delete request "${w.title}"`);
+      del.addEventListener('click', async () => {
+        if (!confirm(`Delete your request "${w.title}"?`)) return;
+        const { error } = await supabase.from('wanted_posts').delete().eq('id', w.id);
+        if (error) return showMessage(error.message);
+        showMessage('Request deleted.', true);
+        load();
+      });
+      actions.append(del);
+    } else if (w.status === 'open') {
+      const have = document.createElement('a');
+      have.className = 'btn btn-whatsapp btn-sm';
+      have.target = '_blank';
+      have.rel = 'noopener';
+      have.innerHTML = `${icon('message-circle')}I have this`;
+      have.href = whatsappLink(w.profiles.phone, `Hi! I saw your request for "${w.title}" on Campus Marketplace. I have one.`);
+      actions.append(have);
+    }
+    return li;
+  }
+
+  function button(variant, iconName, label) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `btn ${variant} btn-sm`;
+    b.innerHTML = icon(iconName) + label;
+    return b;
+  }
+
+  function openCompose() { form.reset(); dialog.showModal(); }
+  $('new').addEventListener('click', openCompose);
+  f.max_budget.addEventListener('input', () => { f.max_budget.value = f.max_budget.value.replace(/\D/g, ''); });
+
+  dialog.addEventListener('close', async () => {
+    if (dialog.returnValue !== 'post') return;
+    const budget = f.max_budget.value === '' ? null : Number(f.max_budget.value);
+    if (budget != null && budget > 200000) return showMessage('Budget can be at most ₹2,00,000.');
+    const { error } = await supabase.from('wanted_posts').insert({
+      title: f.title.value.trim(),
+      details: f.details.value.trim() || null,
+      max_budget: budget,
+      category_id: f.category_id.value ? Number(f.category_id.value) : null,
+    });
+    if (error) {
+      const me = await meReady;
+      return showMessage(me?.blocked ? 'Your account is blocked, so you cannot post requests.' : error.message);
+    }
+    showMessage('Request posted.', true);
+    load();
+  });
+
+  $('category').addEventListener('change', load);
+  $('mine').addEventListener('change', load);
+  load();
+</script>
+</body>
+</html>

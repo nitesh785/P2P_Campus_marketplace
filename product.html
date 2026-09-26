@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Item · Campus Marketplace</title>
   <link rel="stylesheet" href="/src/styles/main.css">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0f766e">
 </head>
 <body>
 <div id="site-header"></div>
@@ -40,32 +44,52 @@
       </div>
 
       <div class="detail-info">
-        <div>
-          <span class="eyebrow" id="category"></span>
-          <h1 id="title" style="margin-top: 8px"></h1>
+        <div class="detail-head">
+          <div>
+            <span class="eyebrow" id="category"></span>
+            <h1 id="title" style="margin-top: 8px"></h1>
+          </div>
+          <div class="detail-tools">
+            <span id="save-slot"></span>
+            <button type="button" class="tool-btn" id="share" aria-label="Share listing" title="Share"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#share-2"></use></svg></button>
+          </div>
         </div>
         <div>
           <div class="detail-price" id="price"></div>
           <div class="badges" style="margin-top: 10px">
             <span class="badge badge-brand" id="condition"></span>
             <span class="badge badge-ok" id="available">Available</span>
+            <span class="badge" id="negotiable" hidden>Negotiable</span>
             <span class="badge badge-error" id="sold" hidden>Sold</span>
+            <span class="badge badge-error" id="expired" hidden>Expired</span>
           </div>
         </div>
 
-        <div class="seller-card">
+        <dl class="facts" id="facts">
+          <div><dt>Pickup</dt><dd id="pickup">Ask the seller</dd></div>
+          <div><dt>Posted</dt><dd id="posted"></dd></div>
+        </dl>
+
+        <a class="seller-card seller-link" id="seller-link">
           <span class="avatar" id="seller-initials"></span>
           <div>
             <strong id="seller"></strong>
-            <span>Student seller · posted <span id="posted"></span></span>
+            <span id="seller-rating">Student seller</span>
           </div>
-        </div>
-
-        <a id="contact" class="btn btn-whatsapp btn-lg btn-block" target="_blank" rel="noopener">
-          <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#message-circle"></use></svg>Contact seller on WhatsApp
+          <svg class="icon" aria-hidden="true" style="margin-left: auto"><use href="/src/icons.svg#chevron-right"></use></svg>
         </a>
+
+        <div id="contact-box" class="stack" style="gap: 10px">
+          <button type="button" id="message" class="btn btn-primary btn-lg btn-block">
+            <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#message-square-text"></use></svg>Message seller
+          </button>
+          <a id="whatsapp" class="btn btn-secondary btn-block" target="_blank" rel="noopener">
+            <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#message-circle"></use></svg>Contact on WhatsApp instead
+          </a>
+        </div>
+        <div id="unavailable" class="msg" data-tone="error" hidden></div>
         <div id="own" class="stack" hidden>
-          <div class="msg" data-tone="ok">This is your listing.</div>
+          <div class="msg" data-tone="ok" id="own-note">This is your listing.</div>
           <a id="edit" class="btn btn-secondary btn-block"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#pencil"></use></svg>Edit listing</a>
         </div>
 
@@ -78,6 +102,10 @@
           <h2>Description</h2>
           <p id="description"></p>
         </div>
+
+        <button type="button" class="link-btn small report-link" id="report-open">
+          <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#flag"></use></svg>Report this listing
+        </button>
       </div>
     </article>
 
@@ -92,20 +120,44 @@
 </main>
 
 <div id="site-footer"></div>
+<p id="msg" class="toast" role="status" aria-live="polite"></p>
+
+<dialog id="report" class="modal" aria-labelledby="report-title">
+  <form method="dialog" class="form" id="report-form">
+    <div>
+      <h2 id="report-title">Report this listing</h2>
+      <p class="muted small">Admins review every report. The seller isn't told who reported it.</p>
+    </div>
+    <label class="field">
+      <span class="field-label">Reason</span>
+      <select class="select" name="reason" required><option value="">Choose a reason</option></select>
+    </label>
+    <label class="field">
+      <span class="field-label">Details (optional)</span>
+      <textarea class="textarea" name="details" maxlength="500" rows="3" placeholder="What's wrong with this listing?"></textarea>
+    </label>
+    <div class="modal-actions" style="margin-top: 0">
+      <button class="btn btn-secondary" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn btn-primary" value="send">Send report</button>
+    </div>
+  </form>
+</dialog>
 
 <script type="module">
-  import { supabase, requireUser } from '/src/lib/supabase.js';
-  import { productCard, stateBlock, initials, formatPrice, formatDate, imageUrl, icon, categoryIcon } from '/src/lib/layout.js';
+  import { supabase, requireUser, showMessage } from '/src/lib/supabase.js';
+  import {
+    productCard, stateBlock, initials, formatPrice, formatDate, imageUrl, icon, categoryIcon,
+    isExpired, nowIso, whatsappLink, rememberViewed, savedIds, saveButton, stars, REPORT_REASONS, meReady,
+  } from '/src/lib/layout.js';
 
   const user = await requireUser();
   const id = new URLSearchParams(location.search).get('id');
   const $ = (elId) => document.getElementById(elId);
 
-  const { data: p, error } = await supabase
-    .from('products')
-    .select('*, categories(name), profiles(name, phone)')
-    .eq('id', id ?? '')
-    .maybeSingle();
+  const [{ data: p, error }, saved] = await Promise.all([
+    supabase.from('products').select('*, categories(name), profiles(name, phone)').eq('id', id ?? '').maybeSingle(),
+    savedIds(),
+  ]);
 
   $('loading').hidden = true;
 
@@ -117,6 +169,11 @@
       ? stateBlock({ tag: 'div', kind: 'error', iconName: 'triangle-alert', title: 'Something went wrong', text: 'We could not load this listing. Please try again.', action: { label: 'Try again', onClick: () => location.reload() } })
       : stateBlock({ tag: 'div', iconName: 'search', title: 'Listing not found', text: 'It may have been deleted by the seller.', action: { label: 'Back to marketplace', href: 'marketplace.html' } }));
   } else {
+    render(p);
+  }
+
+  function render(p) {
+    rememberViewed(p.id);
     const catName = p.categories.name;
     const catLink = `marketplace.html?category=${encodeURIComponent(catName)}`;
     document.title = `${p.title} · Campus Marketplace`;
@@ -128,33 +185,54 @@
     $('title').textContent = p.title;
     $('price').textContent = formatPrice(p.price);
     $('condition').textContent = p.condition;
+    $('negotiable').hidden = !p.negotiable;
+    $('pickup').textContent = p.pickup_location || 'Ask the seller';
+    $('posted').textContent = formatDate(p.created_at);
     $('seller').textContent = p.profiles.name;
     $('seller-initials').textContent = initials(p.profiles.name);
-    $('posted').textContent = formatDate(p.created_at);
+    $('seller-link').href = `seller.html?id=${encodeURIComponent(p.seller_id)}`;
     $('description').textContent = p.description;
 
     const sold = p.status === 'sold';
+    const expired = !sold && isExpired(p);
     const mine = p.seller_id === user.id;
     $('sold').hidden = !sold;
-    $('available').hidden = sold;
+    $('expired').hidden = !expired;
+    $('available').hidden = sold || expired;
     if (p.quantity > 1) $('available').textContent = `${p.quantity} available`;
+
     $('own').hidden = !mine;
     $('edit').href = `sell.html?id=${encodeURIComponent(p.id)}`;
-    $('contact').hidden = sold || mine;
+    if (mine && expired) $('own-note').textContent = 'Your listing has expired and is hidden from the marketplace. Renew it from your dashboard.';
+    $('contact-box').hidden = mine || sold || expired;
+    $('unavailable').hidden = mine || !(sold || expired);
+    $('unavailable').textContent = sold ? 'This item has been sold.' : 'This listing has expired and is no longer on the marketplace.';
+    $('report-open').hidden = mine;
 
-    // ponytail: a 10-digit number is assumed Indian (+91); longer numbers already include a country code.
-    const phone = p.profiles.phone.length === 10 ? `91${p.profiles.phone}` : p.profiles.phone;
-    const text = `Hi, is "${p.title}" still available? (Campus Marketplace)`;
-    $('contact').href = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+    $('whatsapp').href = whatsappLink(p.profiles.phone, `Hi, is "${p.title}" still available? (Campus Marketplace)`);
+    if (!mine) $('save-slot').replaceWith(saveButton(p.id, saved, {
+      onChange: (on) => showMessage(on ? 'Saved. Find it in your dashboard.' : 'Removed from saved.', true),
+    }));
 
     renderGallery(p.image_paths.map(imageUrl), p.title);
     $('product').hidden = false;
+    loadSellerRating(p.seller_id);
+    loadRelated(p, catName, catLink);
+  }
 
-    // Related listings: same category, still available, not this one
+  async function loadSellerRating(sellerId) {
+    const { data } = await supabase.from('reviews').select('rating').eq('seller_id', sellerId);
+    if (!data?.length) return;
+    const avg = data.reduce((sum, r) => sum + r.rating, 0) / data.length;
+    $('seller-rating').textContent = `${stars(avg)} ${avg.toFixed(1)} · ${data.length} ${data.length === 1 ? 'review' : 'reviews'}`;
+  }
+
+  async function loadRelated(p, catName, catLink) {
     const { data: related } = await supabase
       .from('products')
-      .select('id, title, price, quantity, condition, image_paths, categories(name), profiles(name)')
+      .select('id, title, price, quantity, negotiable, pickup_location, condition, image_paths, categories(name), profiles(name)')
       .eq('status', 'available')
+      .gt('expires_at', nowIso())
       .eq('category_id', p.category_id)
       .neq('id', p.id)
       .order('created_at', { ascending: false })
@@ -162,10 +240,61 @@
     if (related?.length) {
       $('related-cat').textContent = catName;
       $('related-all').href = catLink;
-      $('related').replaceChildren(...related.map((r) => productCard(r)));
+      $('related').replaceChildren(...related.map((r) => productCard(r, { saved })));
       $('related-section').hidden = false;
     }
   }
+
+  // ---------- Message seller: open (or reuse) a conversation about this listing ----------
+
+  $('message').addEventListener('click', async () => {
+    const button = $('message');
+    button.disabled = true;
+    let { data: conv } = await supabase.from('conversations').select('id')
+      .eq('product_id', p.id).eq('buyer_id', user.id).maybeSingle();
+    if (!conv) {
+      const { data, error } = await supabase.from('conversations')
+        .insert({ product_id: p.id, product_title: p.title, seller_id: p.seller_id })
+        .select('id').single();
+      if (error) {
+        button.disabled = false;
+        const me = await meReady;
+        return showMessage(me?.blocked ? 'Your account is blocked, so you cannot send messages.' : error.message);
+      }
+      conv = data;
+    }
+    location.href = `messages.html?c=${conv.id}`;
+  });
+
+  // ---------- Share: the phone's share sheet, or copy the link on computers ----------
+
+  $('share').addEventListener('click', async () => {
+    const url = location.href;
+    if (navigator.share) {
+      try { await navigator.share({ title: p.title, text: `${p.title}: ${formatPrice(p.price)} on Campus Marketplace`, url }); } catch { /* cancelled */ }
+    } else {
+      try { await navigator.clipboard.writeText(url); showMessage('Link copied. Classmates need to log in to see it.', true); }
+      catch { showMessage('Copy this page address to share it.'); }
+    }
+  });
+
+  // ---------- Report ----------
+
+  const reportDialog = $('report');
+  const reportForm = $('report-form');
+  for (const [value, label] of Object.entries(REPORT_REASONS)) reportForm.elements.reason.add(new Option(label, value));
+  $('report-open').addEventListener('click', () => { reportForm.reset(); reportDialog.showModal(); });
+  reportDialog.addEventListener('close', async () => {
+    if (reportDialog.returnValue !== 'send') return;
+    const { error } = await supabase.from('reports').insert({
+      product_id: p.id,
+      reason: reportForm.elements.reason.value,
+      details: reportForm.elements.details.value.trim() || null,
+    });
+    if (error?.code === '23505') return showMessage('You have already reported this listing. Thanks!', true);
+    if (error) return showMessage(error.message);
+    showMessage('Thanks. An admin will review this listing.', true);
+  });
 
   function renderGallery(urls, title) {
     const gallery = $('gallery');

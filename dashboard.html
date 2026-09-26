@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard · Campus Marketplace</title>
   <link rel="stylesheet" href="/src/styles/main.css">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#0f766e">
 </head>
 <body>
 <div id="site-header"></div>
@@ -47,6 +51,14 @@
         <h2 style="font-size: 1.35rem">My listings</h2>
       </div>
       <ul id="list" class="listing-rows" aria-busy="true"></ul>
+      <p class="field-hint" style="margin-top: 10px">Listings stay on the marketplace for 60 days. Renew or edit one to keep it up longer.</p>
+    </section>
+
+    <section id="saved">
+      <div class="section-head-row" style="margin-bottom: 16px">
+        <h2 style="font-size: 1.35rem">Saved items</h2>
+      </div>
+      <ul id="saved-list" class="product-grid"></ul>
     </section>
   </div>
 </main>
@@ -68,7 +80,7 @@
 
 <script type="module">
   import { supabase, requireUser, showMessage } from '/src/lib/supabase.js';
-  import { imageUrl, formatPrice, formatDate, stateBlock, icon } from '/src/lib/layout.js';
+  import { imageUrl, formatPrice, formatDate, stateBlock, icon, isExpired, renewedExpiry, productCard, skeletonCards } from '/src/lib/layout.js';
 
   const user = await requireUser();
   const list = document.getElementById('list');
@@ -90,7 +102,7 @@
   // ponytail: no pagination here; a student rarely has more than a handful of listings.
   const [{ data: me }, { data, error }] = await Promise.all([
     supabase.from('profiles').select('name').eq('id', user.id).single(),
-    supabase.from('products').select('id, title, price, quantity, status, image_paths, created_at')
+    supabase.from('products').select('id, title, price, quantity, status, image_paths, created_at, expires_at')
       .eq('seller_id', user.id).order('created_at', { ascending: false }),
   ]);
   document.getElementById('greeting').textContent = `Good ${part}, ${me?.name.split(' ')[0] ?? 'there'}`;
@@ -104,9 +116,31 @@
     refresh();
   }
 
+  // Saved items: the heart on a card removes it from this list.
+  const savedList = document.getElementById('saved-list');
+  savedList.replaceChildren(...skeletonCards(4));
+  const { data: savedRows } = await supabase.from('saved_items')
+    .select('product_id, products(id, title, price, quantity, negotiable, pickup_location, condition, status, expires_at, image_paths, categories(name), profiles(name))')
+    .order('created_at', { ascending: false });
+  const savedSet = new Set((savedRows ?? []).map((r) => r.product_id));
+  const renderSaved = () => {
+    const items = (savedRows ?? []).filter((r) => savedSet.has(r.product_id) && r.products);
+    savedList.replaceChildren(...(items.length ? items.map(({ products: p }) => {
+      const li = productCard(p, { saved: savedSet });
+      if (p.status === 'sold' || isExpired(p)) {
+        li.querySelector('.pcard-media .badge').textContent = p.status === 'sold' ? 'Sold' : 'No longer listed';
+        li.classList.add('pcard-muted');
+      }
+      li.querySelector('.save-btn').addEventListener('click', () => setTimeout(renderSaved, 0));
+      return li;
+    }) : [stateBlock({ iconName: 'heart', title: 'No saved items', text: 'Tap the heart on any listing to keep it here for later.', action: { label: 'Browse marketplace', href: 'marketplace.html' } })]));
+  };
+  renderSaved();
+  if (location.hash === '#saved') document.getElementById('saved').scrollIntoView();
+
   function refresh() {
     const sold = listings.filter((p) => p.status === 'sold').length;
-    document.getElementById('stat-active').textContent = listings.length - sold;
+    document.getElementById('stat-active').textContent = listings.filter((p) => p.status !== 'sold' && !isExpired(p)).length;
     document.getElementById('stat-sold').textContent = sold;
     document.getElementById('stat-total').textContent = listings.length;
     if (!listings.length) {
@@ -141,14 +175,28 @@
     const statusButton = li.querySelector('[data-act=status]');
     const render = () => {
       const sold = p.status === 'sold';
-      badge.textContent = sold ? 'Sold' : p.quantity > 1 ? `${p.quantity} available` : 'Available';
-      badge.className = `badge ${sold ? 'badge-error' : 'badge-ok'}`;
+      const expired = !sold && isExpired(p);
+      badge.textContent = sold ? 'Sold' : expired ? 'Expired' : p.quantity > 1 ? `${p.quantity} available` : 'Available';
+      badge.className = `badge ${sold ? 'badge-error' : expired ? 'badge-accent' : 'badge-ok'}`;
       statusButton.innerHTML = sold ? `${icon('refresh-cw')}Relist`
+        : expired ? `${icon('refresh-cw')}Renew`
         : p.quantity > 1 ? `${icon('circle-check-big')}Sold one` : `${icon('circle-check-big')}Mark sold`;
     };
     render();
 
     statusButton.addEventListener('click', async () => {
+      // Expired: renew for another 60 days.
+      if (p.status !== 'sold' && isExpired(p)) {
+        const expires_at = renewedExpiry();
+        statusButton.disabled = true;
+        const { error } = await supabase.from('products').update({ expires_at }).eq('id', p.id);
+        statusButton.disabled = false;
+        if (error) return showMessage(error.message);
+        p.expires_at = expires_at;
+        render();
+        refresh();
+        return showMessage('Renewed. It is back on the marketplace for 60 days.', true);
+      }
       // Several left: selling one just lowers the quantity; the listing stays up.
       if (p.status !== 'sold' && p.quantity > 1) {
         statusButton.disabled = true;
@@ -160,11 +208,12 @@
         return showMessage(`One sold. ${p.quantity} left on the marketplace.`, true);
       }
       const status = p.status === 'sold' ? 'available' : 'sold';
+      const changes = status === 'available' ? { status, expires_at: renewedExpiry() } : { status };
       statusButton.disabled = true;
-      const { error } = await supabase.from('products').update({ status }).eq('id', p.id);
+      const { error } = await supabase.from('products').update(changes).eq('id', p.id);
       statusButton.disabled = false;
       if (error) return showMessage(error.message);
-      p.status = status;
+      Object.assign(p, changes);
       render();
       refresh();
       showMessage(status === 'sold' ? 'Marked as sold and hidden from the marketplace.' : 'Back on the marketplace.', true);
