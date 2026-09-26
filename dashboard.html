@@ -90,7 +90,7 @@
   // ponytail: no pagination here; a student rarely has more than a handful of listings.
   const [{ data: me }, { data, error }] = await Promise.all([
     supabase.from('profiles').select('name').eq('id', user.id).single(),
-    supabase.from('products').select('id, title, price, status, image_paths, created_at')
+    supabase.from('products').select('id, title, price, quantity, status, image_paths, created_at')
       .eq('seller_id', user.id).order('created_at', { ascending: false }),
   ]);
   document.getElementById('greeting').textContent = `Good ${part}, ${me?.name.split(' ')[0] ?? 'there'}`;
@@ -141,13 +141,24 @@
     const statusButton = li.querySelector('[data-act=status]');
     const render = () => {
       const sold = p.status === 'sold';
-      badge.textContent = sold ? 'Sold' : 'Available';
+      badge.textContent = sold ? 'Sold' : p.quantity > 1 ? `${p.quantity} available` : 'Available';
       badge.className = `badge ${sold ? 'badge-error' : 'badge-ok'}`;
-      statusButton.innerHTML = sold ? `${icon('refresh-cw')}Relist` : `${icon('circle-check-big')}Mark sold`;
+      statusButton.innerHTML = sold ? `${icon('refresh-cw')}Relist`
+        : p.quantity > 1 ? `${icon('circle-check-big')}Sold one` : `${icon('circle-check-big')}Mark sold`;
     };
     render();
 
     statusButton.addEventListener('click', async () => {
+      // Several left: selling one just lowers the quantity; the listing stays up.
+      if (p.status !== 'sold' && p.quantity > 1) {
+        statusButton.disabled = true;
+        const { error } = await supabase.from('products').update({ quantity: p.quantity - 1 }).eq('id', p.id);
+        statusButton.disabled = false;
+        if (error) return showMessage(error.message);
+        p.quantity -= 1;
+        render();
+        return showMessage(`One sold. ${p.quantity} left on the marketplace.`, true);
+      }
       const status = p.status === 'sold' ? 'available' : 'sold';
       statusButton.disabled = true;
       const { error } = await supabase.from('products').update({ status }).eq('id', p.id);

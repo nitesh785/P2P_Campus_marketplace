@@ -643,7 +643,8 @@ button { font: inherit; color: inherit; }
   overflow: hidden;
   min-height: 2.7em;
 }
-.pcard-price { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em; margin-top: 4px; }
+.pcard-price-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; margin-top: 4px; }
+.pcard-price { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em; }
 .pcard-seller {
   display: flex;
   align-items: center;

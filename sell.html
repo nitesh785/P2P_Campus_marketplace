@@ -42,14 +42,21 @@
                 </select>
               </label>
             </div>
-            <label class="field">
-              <span class="field-label">Price (₹)</span>
-              <div class="input-icon">
-                <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#wallet"></use></svg>
-                <input class="input" name="price" type="text" required inputmode="numeric" pattern="[0-9]{1,6}" maxlength="6" autocomplete="off" placeholder="500">
-              </div>
-              <span class="field-hint">Whole rupees, up to ₹2,00,000. Enter 0 to give it away for free.</span>
-            </label>
+            <div class="form-grid-2">
+              <label class="field">
+                <span class="field-label">Price per item (₹)</span>
+                <div class="input-icon">
+                  <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#wallet"></use></svg>
+                  <input class="input" name="price" type="text" required inputmode="numeric" pattern="[0-9]{1,6}" maxlength="6" autocomplete="off" placeholder="500">
+                </div>
+                <span class="field-hint">Whole rupees, up to ₹2,00,000. 0 = free.</span>
+              </label>
+              <label class="field">
+                <span class="field-label">Quantity</span>
+                <input class="input" name="quantity" type="text" required inputmode="numeric" pattern="[0-9]{1,2}" maxlength="2" autocomplete="off" value="1">
+                <span class="field-hint">How many you have to sell, 1–99.</span>
+              </label>
+            </div>
           </div>
         </section>
 
@@ -145,6 +152,7 @@
       f.price.value = data.price;
       f.category_id.value = data.category_id;
       f.condition.value = data.condition;
+      f.quantity.value = data.quantity ?? 1;
       photos = data.image_paths.map((path) => ({ path, src: imageUrl(path) }));
     }
   }
@@ -192,6 +200,7 @@
     const card = productCard({
       title: f.title.value.trim(),
       price: f.price.value,
+      quantity: Number(f.quantity.value),
       condition: f.condition.value,
       categories: { name: option?.value ? option.text : '' },
       profiles: { name: me?.name },
@@ -199,7 +208,7 @@
     document.getElementById('preview').replaceChildren(card);
   }
   form.addEventListener('input', (e) => {
-    if (e.target === f.price) f.price.value = f.price.value.replace(/\D/g, ''); // digits only, e.g. pasted "1,250"
+    if (e.target === f.price || e.target === f.quantity) e.target.value = e.target.value.replace(/\D/g, ''); // digits only, e.g. pasted "1,250"
     document.getElementById('desc-count').textContent = f.description.value.length;
     renderPreview();
   });
@@ -229,6 +238,8 @@
     e.preventDefault();
     if (!form.reportValidity()) return;
     if (Number(f.price.value) > 200000) return showMessage('Price can be at most ₹2,00,000.');
+    const quantity = Number(f.quantity.value);
+    if (quantity < 1 || quantity > 99) return showMessage('Quantity must be between 1 and 99.');
     if (!photos.length) return showMessage('Add at least one photo.');
 
     const button = document.getElementById('submit');
@@ -255,6 +266,7 @@
           title: f.title.value.trim(),
           description: f.description.value.trim(),
           price: Number(f.price.value),
+          quantity,
           category_id: Number(f.category_id.value),
           condition: f.condition.value,
           image_paths: imagePaths,

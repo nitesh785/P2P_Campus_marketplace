@@ -74,7 +74,7 @@ All 11 requirements are in the MVP. P0 items are needed for a demo; P1 items can
 | --- | --- | --- | --- |
 | FR-01 | Registration | P0 | Roll number, name, any email, phone and password required. The database rejects roll numbers not on the official list or already registered. A verification email arrives within 2 minutes. |
 | FR-02 | Login, logout, reset | P0 | Unverified accounts can't log in. Sessions persist across page reloads. The reset-password email works. |
-| FR-03 | Create listing | P0 | Title 3–100 chars, description up to 1,000, price ₹0–2,00,000, category, condition. Invalid input shows an inline error. |
+| FR-03 | Create listing | P0 | Title 3–100 chars, description up to 1,000, price ₹0–2,00,000, quantity 1–99, category, condition. Invalid input shows an inline error. |
 | FR-04 | Image upload | P0 | 1–3 images per listing. Each is compressed in the browser to WebP, 1080 px max, 200 KB or less. |
 | FR-05 | Browse | P0 | Newest-first grid, 20 cards per page, showing image, title, price, category and condition. |
 | FR-06 | Search | P0 | Searching "calculator" returns every available listing with that word in the title or description. |

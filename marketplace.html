@@ -118,7 +118,7 @@
 
     let q = supabase
       .from('products')
-      .select('id, title, price, condition, image_paths, categories(name), profiles(name)', { count: 'exact' })
+      .select('id, title, price, quantity, condition, image_paths, categories(name), profiles(name)', { count: 'exact' })
       .eq('status', 'available');
 
     const search = toPrefixQuery(f.q.value);

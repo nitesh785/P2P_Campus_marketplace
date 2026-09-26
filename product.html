@@ -137,6 +137,7 @@
     const mine = p.seller_id === user.id;
     $('sold').hidden = !sold;
     $('available').hidden = sold;
+    if (p.quantity > 1) $('available').textContent = `${p.quantity} available`;
     $('own').hidden = !mine;
     $('edit').href = `sell.html?id=${encodeURIComponent(p.id)}`;
     $('contact').hidden = sold || mine;
@@ -152,7 +153,7 @@
     // Related listings: same category, still available, not this one
     const { data: related } = await supabase
       .from('products')
-      .select('id, title, price, condition, image_paths, categories(name), profiles(name)')
+      .select('id, title, price, quantity, condition, image_paths, categories(name), profiles(name)')
       .eq('status', 'available')
       .eq('category_id', p.category_id)
       .neq('id', p.id)

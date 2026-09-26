@@ -98,6 +98,13 @@ Tick items as you finish them (`- [x]`). Items marked **(you)** need the project
 - [x] Skeleton loaders, empty and error states, toasts, delete confirmation dialog
 - [ ] **(you)** Test the redesigned site end to end on desktop and phone
 
+## Phase 9: Feedback fixes
+
+- [x] Price inputs no longer change on mouse-wheel scroll
+- [x] "Take photo" camera button on phones
+- [x] Listing quantity (sell form, cards, product page, dashboard "Sold one")
+- [ ] **(you)** Run the quantity migration in Supabase (end of `supabase/schema.sql`)
+
 ## Post-MVP backlog
 
 - [ ] Report listing + admin role

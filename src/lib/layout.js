@@ -43,7 +43,7 @@ export function productCard(p, { imageSrc } = {}) {
       <div class="pcard-body">
         <span class="pcard-cat">${icon(categoryIcon(category))}<span></span></span>
         <span class="pcard-title"></span>
-        <span class="pcard-price"></span>
+        <span class="pcard-price-row"><span class="pcard-price"></span><span class="badge badge-accent pcard-qty"></span></span>
         <span class="pcard-seller"><span class="avatar"></span><span></span></span>
       </div>
     </a>`;
@@ -57,6 +57,9 @@ export function productCard(p, { imageSrc } = {}) {
   li.querySelector('.pcard-cat span').textContent = category || 'Category';
   li.querySelector('.pcard-title').textContent = p.title || 'Your item title';
   li.querySelector('.pcard-price').textContent = p.price === '' || p.price == null ? '₹—' : formatPrice(p.price);
+  const qty = li.querySelector('.pcard-qty');
+  if (p.quantity > 1) qty.textContent = `${p.quantity} available`;
+  else qty.remove();
   const seller = li.querySelector('.pcard-seller');
   if (p.profiles?.name) {
     seller.querySelector('.avatar').textContent = initials(p.profiles.name);

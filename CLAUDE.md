@@ -47,6 +47,7 @@ College-only web marketplace where verified students buy and sell second-hand it
 | 2026-09-26 | Team members are the admins; they use the Supabase dashboard | Owner |
 | 2026-09-26 | Roll-number format `<year><course><3-digit serial>`, e.g. `2026CSE102`; courses CSE, CSDS, CSAI, CSIT | Owner |
 | 2026-09-26 | Student emails are not copied into `profiles`; they stay private in `auth.users` | Claude |
+| 2026-09-27 | Listings have a quantity (1–99). "Sold one" lowers it; the last one is marked sold | Owner + Claude |
 
 ## Open questions (move to Decisions when answered)
 
@@ -89,6 +90,7 @@ Coding style, tools, communication and workflow preferences go here as teammates
 - **Check / undo:** Cloudflare → Workers & Pages → project → Deployments (status, Rollback).
 - **Preview:** push any other branch to get a separate preview URL; merge to `main` to go live.
 - **Database changes are manual:** new SQL in `supabase/schema.sql` must also be run in the Supabase SQL Editor.
+- **Order for schema changes:** add the SQL to the *Migrations* section at the end of `schema.sql`, run it in Supabase **first**, then push the code that uses it. Pushing first breaks the live site (queries on a missing column fail).
 
 ## Current status
 
@@ -139,3 +141,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-26 | Site deployed on Cloudflare Pages; mobile layout fixed (full-bleed pages, 2-column grid, wrapping header, filter overflow, 44 px tap targets) |
 | 2026-09-26 | Full UI/UX redesign: design system, landing page (new home), marketplace moved to marketplace.html, dashboard replaces my-listings, profile, how-it-works/about/FAQ/privacy/terms/404, login returns to the requested page |
 | 2026-09-27 | Fixed price inputs changing on mouse-wheel scroll (text + numeric keypad); added "Take photo" camera button on the sell page |
+| 2026-09-27 | Added listing quantity (DB column via migration, sell form, cards, product page, dashboard "Sold one") |

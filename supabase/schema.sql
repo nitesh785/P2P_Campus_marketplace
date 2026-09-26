@@ -51,6 +51,7 @@ create table public.products (
   category_id  smallint not null references public.categories(id),
   condition    product_condition not null,
   image_paths  text[] not null check (array_length(image_paths, 1) between 1 and 3),
+  quantity     smallint not null default 1 check (quantity between 1 and 99),
   status       product_status not null default 'available',
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now(),
@@ -149,3 +150,12 @@ create policy "delete own images" on storage.objects
   for delete to authenticated
   using (bucket_id = 'product-images'
          and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- =========================================================
+-- Migrations for projects created before a change above.
+-- Safe to re-run. Run each new block once in the SQL Editor.
+-- =========================================================
+
+-- 2026-09-27: how many of an item the seller has
+alter table public.products
+  add column if not exists quantity smallint not null default 1 check (quantity between 1 and 99);
