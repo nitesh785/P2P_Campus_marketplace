@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Register · Campus Marketplace</title>
+  <link rel="stylesheet" href="src/styles/main.css">
+</head>
+<body>
+<main>
+  <h1>Create account</h1>
+  <form novalidate>
+    <label>Roll number <small>e.g. 2026CSE102</small>
+      <input name="roll_no" required autocomplete="off" autocapitalize="characters">
+    </label>
+    <label>Full name
+      <input name="name" required minlength="2" maxlength="60" autocomplete="name">
+    </label>
+    <label>Email <small>any email you can open</small>
+      <input name="email" type="email" required autocomplete="email">
+    </label>
+    <label>WhatsApp number <small>10-digit mobile number, digits only</small>
+      <input name="phone" type="tel" required pattern="[0-9]{10,13}" inputmode="numeric" autocomplete="tel">
+    </label>
+    <label>Password <small>at least 6 characters</small>
+      <input name="password" type="password" required minlength="6" autocomplete="new-password">
+    </label>
+    <label>Confirm password
+      <input name="confirm" type="password" required autocomplete="new-password">
+    </label>
+    <label class="check">
+      <input name="consent" type="checkbox" required>
+      I agree that logged-in students can see my name and WhatsApp number on my listings.
+    </label>
+    <button type="submit">Create account</button>
+  </form>
+  <p id="msg" class="msg" role="status" aria-live="polite"></p>
+  <p>Already registered? <a href="login.html">Log in</a></p>
+</main>
+
+<script type="module">
+  import { supabase, ROLL_NO_PATTERN, pageUrl, showMessage } from './src/lib/supabase.js';
+
+  const form = document.querySelector('form');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+
+    const f = Object.fromEntries(new FormData(form));
+    const roll_no = f.roll_no.trim().toUpperCase();
+    if (!ROLL_NO_PATTERN.test(roll_no)) return showMessage('Roll number must look like 2026CSE102 (courses CSE, CSDS, CSAI, CSIT).');
+    if (f.password !== f.confirm) return showMessage('Passwords do not match.');
+
+    const button = form.querySelector('button');
+    button.disabled = true;
+    const { data, error } = await supabase.auth.signUp({
+      email: f.email.trim(),
+      password: f.password,
+      options: {
+        data: { roll_no, name: f.name.trim(), phone: f.phone.trim() },
+        emailRedirectTo: pageUrl('login.html'),
+      },
+    });
+    button.disabled = false;
+
+    // The database sign-up trigger rejects unknown or already-used roll numbers;
+    // Supabase reports that as a generic "Database error saving new user".
+    if (error) {
+      return showMessage(error.message.includes('Database error')
+        ? 'This roll number is not on the student list, or it is already registered.'
+        : error.message);
+    }
+    // Supabase hides whether an email exists; an empty identities list means it does.
+    if (data.user?.identities?.length === 0) return showMessage('This email is already registered. Try logging in.');
+
+    form.hidden = true;
+    showMessage('Account created! Open the confirmation link we emailed you, then log in.', true);
+  });
+</script>
+</body>
+</html>

@@ -72,19 +72,19 @@ Coding style, tools, communication and workflow preferences go here as teammates
 ## Conventions
 
 - **Database:** snake_case tables/columns; schema lives in `supabase/schema.sql`; every schema change goes in that file.
-- **Folders:** `src/lib` (Supabase client, helpers), `src/pages`, `src/components`, `src/styles`, `supabase/`.
+- **Folders:** HTML pages at the repo root (`index.html`, `login.html`, `register.html`, `reset.html`); `src/lib/supabase.js` (client + shared helpers); `src/styles/main.css`; `supabase/schema.sql`. Each page has one inline `<script type="module">`.
 - **Config:** Supabase URL + anon key live in `src/lib/supabase.js` (public-safe). No env vars in the frontend. GitHub Actions uses secrets `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
 - **Roll numbers:** regex `^[0-9]{4}(CSE|CSDS|CSAI|CSIT)[0-9]{3}$`, enforced in the DB (`allowed_students`) and in `src/lib/supabase.js` (`ROLL_NO_PATTERN`). New course → update both.
 - **Git:** repo at https://github.com/nitesh785/P2P_Campus_marketplace, default branch `main`. Branching and review rules are TBD by the team.
 
 ## Current status
 
-- **Phase:** 1, project setup (see TODO.md). All accounts are created.
+- **Phase:** 2, authentication (see TODO.md).
 - **Done:** README rewritten for zero cost; PRD.md and TODO.md created; database chosen.
 - **Done:** Git repo pushed to GitHub (`main`).
-- **Done:** `supabase/schema.sql` (tables, sign-up trigger, RLS, storage) and `src/lib/supabase.js` written.
-- **Not done yet:** schema not yet run in Supabase; Supabase URL/anon key not yet in `src/lib/supabase.js`; no pages yet.
-- **Next step:** owner runs `schema.sql` and adds URL/anon key; then Phase 2 (register/login pages).
+- **Done:** `schema.sql` run in Supabase (project `icphsbadppjnztfxxuui`); URL + publishable key in `src/lib/supabase.js`; register, login, forgot/reset password, logout and a guarded home page built.
+- **Not done yet:** auth flow not yet tested end-to-end; marketplace, listings, dashboard.
+- **Next step:** owner adds test roll numbers, sets Auth URLs + Brevo SMTP, tests sign-up; then Phase 3 (create listing + images).
 
 ## Change log
 
@@ -94,3 +94,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-26 | Initialised Git, added .gitignore, pushed to GitHub |
 | 2026-09-26 | Switched verification to roll-number allowlist; frontend set to plain HTML/JS; README, PRD, TODO updated |
 | 2026-09-26 | Roll-number format decided; added supabase/schema.sql and src/lib/supabase.js |
+| 2026-09-26 | Schema run in Supabase; added auth pages (register, login, reset, home with logout) |

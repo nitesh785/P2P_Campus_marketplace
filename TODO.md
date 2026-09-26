@@ -24,20 +24,20 @@ Tick items as you finish them (`- [x]`). Items marked **(you)** need the project
 - [x] `git init`, add `.gitignore` (includes `.env`), push to GitHub
 - [x] Write `supabase/schema.sql` (tables, indexes, categories, sign-up trigger, RLS, storage bucket and policies)
 - [ ] Import the roll-number CSV into `allowed_students`
-- [ ] **(you)** Run `supabase/schema.sql` in the Supabase SQL Editor (it also creates the `product-images` bucket)
+- [x] **(you)** Run `supabase/schema.sql` in the Supabase SQL Editor (it also creates the `product-images` bucket)
 - [x] Add `src/lib/supabase.js` (supabase-js from CDN, roll-number pattern)
-- [ ] **(you)** Put the Supabase project URL and anon key in `src/lib/supabase.js`
+- [x] Put the Supabase project URL and publishable key in `src/lib/supabase.js`
 
 ## Phase 2: Authentication (FR-01, FR-02)
 
 - [ ] Enable "Confirm email" in Supabase Auth
 - [ ] Connect Brevo SMTP in Supabase Auth settings
 - [ ] Set the Site URL and redirect URLs
-- [ ] Registration page (roll number, name, email, phone, password, confirm, consent checkbox)
-- [ ] Friendly error for "roll number not found or already registered"
-- [ ] Login page and logout button
-- [ ] Forgot/reset password flow
-- [ ] Route guard: redirect logged-out users to login
+- [x] Registration page (roll number, name, email, phone, password, confirm, consent checkbox)
+- [x] Friendly error for "roll number not found or already registered"
+- [x] Login page and logout button
+- [x] Forgot/reset password flow
+- [x] Route guard: redirect logged-out users to login
 - [ ] Test: listed roll number accepted, unlisted and reused roll numbers rejected, unverified login blocked
 
 ## Phase 3: Listings (FR-03, FR-04, FR-08)

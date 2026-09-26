@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Log in · Campus Marketplace</title>
+  <link rel="stylesheet" href="src/styles/main.css">
+</head>
+<body>
+<main>
+  <h1>Campus Marketplace</h1>
+  <form novalidate>
+    <label>Email
+      <input name="email" type="email" required autocomplete="email">
+    </label>
+    <label>Password
+      <input name="password" type="password" required autocomplete="current-password">
+    </label>
+    <button type="submit">Log in</button>
+    <button type="button" id="forgot" class="link">Forgot password?</button>
+  </form>
+  <p id="msg" class="msg" role="status" aria-live="polite"></p>
+  <p>New here? <a href="register.html">Create an account</a></p>
+</main>
+
+<script type="module">
+  import { supabase, pageUrl, showMessage } from './src/lib/supabase.js';
+
+  const form = document.querySelector('form');
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) location.replace('index.html');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+
+    const button = form.querySelector('button[type=submit]');
+    button.disabled = true;
+    const { error } = await supabase.auth.signInWithPassword({
+      email: form.email.value.trim(),
+      password: form.password.value,
+    });
+    button.disabled = false;
+
+    if (!error) return location.replace('index.html');
+    showMessage(error.message.includes('not confirmed')
+      ? 'Please open the confirmation link in your email first.'
+      : 'Wrong email or password.');
+  });
+
+  document.getElementById('forgot').addEventListener('click', async () => {
+    const email = form.email.value.trim();
+    if (!email) return showMessage('Enter your email above first.');
+    await supabase.auth.resetPasswordForEmail(email, { redirectTo: pageUrl('reset.html') });
+    // Same message either way, so nobody can probe which emails are registered.
+    showMessage('If that email is registered, a reset link is on its way.', true);
+  });
+</script>
+</body>
+</html>

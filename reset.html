@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reset password · Campus Marketplace</title>
+  <link rel="stylesheet" href="src/styles/main.css">
+</head>
+<body>
+<main>
+  <h1>Set a new password</h1>
+  <form novalidate hidden>
+    <label>New password <small>at least 6 characters</small>
+      <input name="password" type="password" required minlength="6" autocomplete="new-password">
+    </label>
+    <label>Confirm new password
+      <input name="confirm" type="password" required autocomplete="new-password">
+    </label>
+    <button type="submit">Save password</button>
+  </form>
+  <p id="msg" class="msg" role="status" aria-live="polite"></p>
+  <p><a href="login.html">Back to login</a></p>
+</main>
+
+<script type="module">
+  import { supabase, showMessage } from './src/lib/supabase.js';
+
+  const form = document.querySelector('form');
+
+  // supabase-js signs the user in from the link in the reset email.
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) form.hidden = false;
+  else showMessage('This reset link is invalid or has expired. Request a new one from the login page.');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+    if (form.password.value !== form.confirm.value) return showMessage('Passwords do not match.');
+
+    const { error } = await supabase.auth.updateUser({ password: form.password.value });
+    if (error) return showMessage(error.message);
+    location.replace('index.html');
+  });
+</script>
+</body>
+</html>
