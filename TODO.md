@@ -38,7 +38,7 @@ Tick items as you finish them (`- [x]`). Items marked **(you)** need the project
 - [x] Login page and logout button
 - [x] Forgot/reset password flow
 - [x] Route guard: redirect logged-out users to login
-- [ ] Test: listed roll number accepted, unlisted and reused roll numbers rejected, unverified login blocked
+- [x] Test: listed roll number accepted, unlisted and reused roll numbers rejected, unverified login blocked
 
 ## Phase 3: Listings (FR-03, FR-04, FR-08)
 
