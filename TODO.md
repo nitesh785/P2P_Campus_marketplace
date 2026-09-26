@@ -72,19 +72,19 @@ Tick items as you finish them (`- [x]`). Items marked **(you)** need the project
 ## Phase 6: Testing
 
 - [ ] Run every test case in the README's Testing Strategy section
-- [ ] RLS test: user B cannot edit, delete or upload into user A's data
-- [ ] Logged-out visitor cannot read products
-- [ ] Search the built bundle to confirm no `service_role` key is present
+- [x] RLS test: user B cannot edit or delete user A's listing (owner tested)
+- [x] Logged-out visitor cannot read products, profiles or the roll list; cannot insert (checked via API)
+- [x] No secret keys in the repo; `.env` not tracked
 - [ ] Mobile test at 360 px wide; keyboard and alt-text check
 - [ ] Try it with 3–5 classmates and fix feedback
 
 ## Phase 7: Deployment
 
-- [ ] Push to GitHub
-- [ ] Connect the repo to Cloudflare Pages (no build command, output `/`)
-- [ ] Update the Supabase Site URL to the live `*.pages.dev` URL
-- [ ] Add `SUPABASE_URL` and `SUPABASE_ANON_KEY` as GitHub Actions secrets
-- [ ] Add `.github/workflows/keep-alive.yml` and run it once manually
+- [x] Push to GitHub
+- [ ] **(you)** Connect the repo to Cloudflare Pages (no build command, output `/`)
+- [ ] **(you)** Update the Supabase Site URL + redirect URLs to the live `*.pages.dev` URL
+- [x] Add `.github/workflows/keep-alive.yml` (uses the public key, no secrets needed)
+- [ ] **(you)** Run the keep-alive workflow once manually (GitHub → Actions → Run workflow)
 - [ ] Final end-to-end test on the live site
 - [ ] Prepare the demo: seed 10–15 realistic listings, screenshots, slides
 

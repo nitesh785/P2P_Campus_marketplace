@@ -1,0 +1,19 @@
+# Supabase pauses free projects after 7 days without activity.
+# This pings the database twice a week so the marketplace stays online (free on GitHub Actions).
+name: Keep Supabase awake
+
+on:
+  schedule:
+    - cron: "0 6 * * 1,4" # Mondays and Thursdays, 06:00 UTC
+  workflow_dispatch: # "Run workflow" button for a manual test
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query the database
+        # URL and publishable key are public (they ship in the website too); RLS protects the data.
+        run: |
+          curl --fail --silent --show-error \
+            "https://icphsbadppjnztfxxuui.supabase.co/rest/v1/categories?select=id&limit=1" \
+            -H "apikey: sb_publishable_ksoiCHmFZ3Mfnf0BNqO_XQ_LlkYj8DF"

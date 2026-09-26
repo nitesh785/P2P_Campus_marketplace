@@ -28,7 +28,7 @@ College-only web marketplace where verified students buy and sell second-hand it
 | Images | Supabase Storage, bucket `product-images`, path `<user_id>/<product_id>/<n>.webp` |
 | Emails | Brevo free SMTP (fallback: Resend or Gmail SMTP) |
 | Hosting | Cloudflare Pages |
-| Keep-alive | GitHub Actions cron, twice a week (Supabase pauses after 7 idle days) |
+| Keep-alive | `.github/workflows/keep-alive.yml`, twice a week (Supabase pauses after 7 idle days) |
 | Contact | WhatsApp `wa.me` links (no in-app chat in MVP) |
 | Frontend | Plain HTML/CSS/JS, no build step; libraries (supabase-js, browser-image-compression) from the jsDelivr CDN |
 | Student verification | Roll-number allowlist (`allowed_students` table, CSV import); any email allowed; one account per roll number |
@@ -91,14 +91,16 @@ Coding style, tools, communication and workflow preferences go here as teammates
 - **Done:** Phase 4 code: marketplace grid on `index.html`, prefix full-text search (`calc` finds calculator), category/condition/price filters, 20 per page + Load more.
 - **Done:** Phase 4 tested by owner (second user sees item, WhatsApp contact works).
 - **Done:** Phase 5 code: `my-listings.html` (edit, mark sold/available, delete with photo cleanup), edit mode in `sell.html`.
-- **Not done yet:** Phase 5 manual test; Phase 6 testing checklist; Phase 7 deployment.
-- **Next step:** owner tests My Listings; then Phase 6 (testing) and Phase 7 (deploy to Cloudflare Pages).
+- **Done:** Phase 5 tested by owner; Phase 6 API security checks passed (logged-out reads/writes blocked, no secrets in repo); keep-alive workflow added.
+- **Not done yet:** Cloudflare Pages deployment; mobile/keyboard check; demo data.
+- **Next step:** owner connects Cloudflare Pages and updates Supabase Auth URLs to the live URL.
 
 ## Gotchas (setup lessons)
 
 - **Brevo `525 5.7.1 Unauthorized IP address`:** turn off Brevo → Security → Authorised IPs → "Block unknown IP addresses". Supabase sends from changing IPs, so allowlisting one IP doesn't work.
 - **Failed sign-up leaves an unconfirmed user:** delete it in Supabase → Authentication → Users to free the roll number.
 - **CSS `hidden`:** `display: grid/block` rules override the `hidden` attribute; `main.css` has a global `[hidden] { display: none !important; }`. Keep it.
+- **Keep-alive workflow:** GitHub disables scheduled workflows after 60 days without repo activity; re-enable it in the Actions tab if that happens.
 - **Local testing:** Supabase Auth URL config has Site URL `http://127.0.0.1:5500` and redirect `http://127.0.0.1:5500/**` (VS Code Live Server). Update both when deploying.
 
 ## Change log
@@ -114,3 +116,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-26 | Phase 3: sell + product pages, motion rules from emil-design-eng/animate skills, storage read policy, fixed [hidden] CSS bug |
 | 2026-09-26 | Phase 4: marketplace grid with search, filters, pagination on index.html |
 | 2026-09-26 | Phase 5: My Listings page, edit mode on sell page |
+| 2026-09-26 | Phase 6 security checks passed; keep-alive GitHub Action added |
