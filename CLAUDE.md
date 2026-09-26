@@ -9,6 +9,7 @@ College-only web marketplace where verified students buy and sell second-hand it
 
 - Requirements: [PRD.md](PRD.md)
 - Task checklist: [TODO.md](TODO.md) (tick items as they're done)
+- Feature ideas within the free tiers: [suggestion.md](suggestion.md)
 - Full setup, SQL schema, security policies: [README.md](README.md)
 
 ## Hard rules (never break)
@@ -142,3 +143,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-26 | Full UI/UX redesign: design system, landing page (new home), marketplace moved to marketplace.html, dashboard replaces my-listings, profile, how-it-works/about/FAQ/privacy/terms/404, login returns to the requested page |
 | 2026-09-27 | Fixed price inputs changing on mouse-wheel scroll (text + numeric keypad); added "Take photo" camera button on the sell page |
 | 2026-09-27 | Added listing quantity (DB column via migration, sell form, cards, product page, dashboard "Sold one") |
+| 2026-09-27 | Added suggestion.md (free-tier feature ideas, recommended next 3) |
