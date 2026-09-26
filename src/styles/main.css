@@ -1191,6 +1191,69 @@ button { font: inherit; color: inherit; }
 .lost p { color: var(--muted); margin: 12px 0 28px; }
 
 
+/* ---------- Logo ---------- */
+
+.logo-img { display: block; height: 34px; width: auto; }
+.auth-brand .logo-img { filter: drop-shadow(0 1px 0 rgb(255 255 255 / 0.35)); }
+.auth-emblem { display: block; width: min(220px, 60%); height: auto; margin-bottom: 20px; }
+.about-emblem { display: block; width: min(260px, 70%); height: auto; margin-bottom: 20px; }
+@media (max-width: 900px) { .auth-emblem { width: 140px; margin-bottom: 12px; } }
+
+/* ---------- Campus map picker ---------- */
+
+.select-with-btn { display: flex; gap: 8px; }
+.select-with-btn .select { flex: 1; min-width: 0; }
+.select-with-btn .btn { flex: none; }
+
+.modal-map { width: min(94vw, 560px); max-height: 92dvh; padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+.modal-map:not([open]) { display: none; }
+.map-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 18px 18px 12px; border-bottom: 1px solid var(--border); }
+.map-head h2 { margin: 0 0 2px; }
+.campus-map { overflow-y: auto; }
+.campus-map-inner { position: relative; }
+.campus-map img { display: block; width: 100%; height: auto; }
+.map-pin {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  padding: 0;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #0f766e;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.35);
+  cursor: pointer;
+  transition: transform 160ms var(--ease-out), background-color 150ms ease;
+}
+.map-pin::after { content: ''; position: absolute; inset: -10px; } /* bigger tap target */
+.map-pin-label {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #16181d;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  translate: -50% 4px;
+  transition: opacity 150ms var(--ease-out), translate 150ms var(--ease-out);
+}
+.map-pin[data-selected="true"] { background: #e8590c; transform: scale(1.2); }
+.map-pin[data-selected="true"] .map-pin-label,
+.map-pin:focus-visible .map-pin-label { opacity: 1; translate: -50% 0; }
+button.map-pin:active { transform: scale(0.9); }
+@media (hover: hover) and (pointer: fine) {
+  button.map-pin:hover { transform: scale(1.15); }
+  button.map-pin:hover .map-pin-label { opacity: 1; translate: -50% 0; }
+}
+/* Touch screens have no hover, so show every name */
+@media (pointer: coarse) { button.map-pin .map-pin-label { opacity: 0.92; translate: -50% 0; font-size: 0.68rem; } }
+@media (prefers-reduced-motion: reduce) { .map-pin, .map-pin-label { transition: none; } button.map-pin:hover, button.map-pin:active { transform: none; } }
+
 /* ---------- Saved (heart) button, card extras ---------- */
 
 .pcard-item { position: relative; }

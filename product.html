@@ -6,7 +6,7 @@
   <title>Item · Campus Marketplace</title>
   <link rel="stylesheet" href="/src/styles/main.css">
   <link rel="manifest" href="/manifest.json">
-  <link rel="icon" href="/icons/icon-192.png" type="image/png">
+  <link rel="icon" href="/icons/favicon.png" type="image/png">
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0f766e">
 </head>
@@ -66,7 +66,7 @@
         </div>
 
         <dl class="facts" id="facts">
-          <div><dt>Pickup</dt><dd id="pickup">Ask the seller</dd></div>
+          <div><dt>Meeting spot</dt><dd><span id="pickup">Ask the seller</span> <button type="button" class="link-btn small" id="show-map" hidden>Show on map</button></dd></div>
           <div><dt>Posted</dt><dd id="posted"></dd></div>
         </dl>
 
@@ -147,7 +147,7 @@
   import { supabase, requireUser, showMessage } from '/src/lib/supabase.js';
   import {
     productCard, stateBlock, initials, formatPrice, formatDate, imageUrl, icon, categoryIcon,
-    isExpired, nowIso, whatsappLink, whatsappNumbers, rememberViewed, savedIds, saveButton, stars, REPORT_REASONS, meReady,
+    isExpired, nowIso, whatsappLink, whatsappNumbers, rememberViewed, openCampusMap, PICKUP_LOCATIONS, savedIds, saveButton, stars, REPORT_REASONS, meReady,
   } from '/src/lib/layout.js';
 
   const user = await requireUser();
@@ -187,6 +187,8 @@
     $('condition').textContent = p.condition;
     $('negotiable').hidden = !p.negotiable;
     $('pickup').textContent = p.pickup_location || 'Ask the seller';
+    $('show-map').hidden = !PICKUP_LOCATIONS.includes(p.pickup_location);
+    $('show-map').onclick = () => openCampusMap({ selected: p.pickup_location, pick: false });
     $('posted').textContent = formatDate(p.created_at);
     $('seller').textContent = p.profiles.name;
     $('seller-initials').textContent = initials(p.profiles.name);

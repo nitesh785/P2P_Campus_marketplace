@@ -52,13 +52,14 @@ College-only web marketplace where verified students buy and sell second-hand it
 | 2026-09-27 | Build every free-tier feature from suggestion.md except email alerts | Owner |
 | 2026-09-27 | Listings expire 60 days after posting/renewal via an `expires_at` column filtered in queries (no cron job) | Claude |
 | 2026-09-27 | Only a buyer the seller replied to in Messages can rate that seller, once per conversation | Claude |
+| 2026-09-27 | College is ABESIT; meeting spots come from the campus map (`CAMPUS_SPOTS` in `layout.js`, pins in % of the map) | Owner |
+| 2026-09-27 | Official logo used for header/footer mark, sign-in panels, About, favicon and app icons | Owner |
 | 2026-09-27 | WhatsApp numbers are private by default (opt-in `show_whatsapp`); only `whatsapp_numbers()` can return a number. "I have this" on Wanted opens an in-app chat | Owner |
 | 2026-09-27 | Admins are set by SQL (`update profiles set is_admin = true ...`); users can never change `is_admin`/`blocked` | Claude |
 
 ## Open questions (move to Decisions when answered)
 
 - [ ] Source of the official roll-number list (CSV)
-- [ ] Confirm the pickup location list (`PICKUP_LOCATIONS` in `src/lib/layout.js`)
 - [ ] Team members' names and roles
 - [ ] Demo or submission deadline
 - [ ] Is college permission needed?
@@ -85,6 +86,8 @@ Coding style, tools, communication and workflow preferences go here as teammates
 - **Pages (repo root):** `index.html` (public landing), `login.html`, `register.html`, `reset.html`, `marketplace.html`, `product.html`, `sell.html` (edit mode via `?id=`), `dashboard.html` (my listings, stats, saved items), `profile.html`, `seller.html?id=`, `wanted.html`, `messages.html?c=`, `admin.html`, `offline.html` (PWA fallback), `how-it-works.html`, `about.html`, `faq.html`, `privacy.html`, `terms.html`, `404.html` (served by Cloudflare for missing URLs).
 - **Shared code:** `src/lib/supabase.js` (client, `requireUser`, `nextPage`, `showMessage`, `busy`), `src/lib/layout.js` (header/footer injected into `#site-header`/`#site-footer`, `productCard`, `skeletonCards`, `stateBlock`, `icon`, formatters), `src/styles/main.css` (the design system), `src/icons.svg` (Lucide subset; add a symbol there before using a new icon).
 - **Analytics:** Cloudflare Web Analytics beacon (public token) before `</body>` on every page except `offline.html`. New pages must include it.
+- **Brand assets:** `images/logo-mark.png` (header/footer, transparent), `images/logo-emblem.webp` (large), `images/campus-map.webp` (900 px). Originals (1.4 MB each) live in `design/`; never link them from pages. Icons in `icons/` are generated from the emblem.
+- **Meeting spots:** `CAMPUS_SPOTS` in `src/lib/layout.js` (name + pin x/y %). `openCampusMap()` shows the picker (sell form) or one spot (item page). Adding a spot = one line there.
 - **App (PWA):** `manifest.json`, `sw.js` (offline fallback only, never caches data), `icons/`.
 - **Migrations:** `supabase/schema.sql` first, then `supabase/migrations/*.sql` in date order. New DB changes go in a new dated file there.
 - **Paths:** root-absolute (`/src/...`, `/marketplace.html`) in shared code and 404 so they work at any URL.
@@ -166,3 +169,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-27 | Cloudflare Web Analytics enabled (beacon on all pages), privacy.html updated |
 | 2026-09-27 | Fixed ambiguous products→profiles joins after saved_items was added (broke admin and listing pages); added tools/check_queries.py |
 | 2026-09-27 | WhatsApp privacy: opt-in switch (profile + sign-up), numbers hidden via column grants + RPC, Wanted chats in Messages |
+| 2026-09-27 | Added official logo (header, footer, sign-in, About, icons) and ABESIT campus map picker for meeting spots |

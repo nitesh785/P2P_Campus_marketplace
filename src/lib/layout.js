@@ -21,8 +21,73 @@ const CATEGORY_ICONS = {
 };
 export const categoryIcon = (name) => CATEGORY_ICONS[name] ?? 'tag';
 
-// Pickup spots offered on the sell form and marketplace filter. Change the list here.
-export const PICKUP_LOCATIONS = ['Boys hostel', 'Girls hostel', 'Library', 'Canteen', 'Academic block', 'Main gate', 'Other'];
+// Meeting spots on the ABESIT campus map (/images/campus-map.webp).
+// x / y are the pin position in percent of the map's width / height.
+export const CAMPUS_SPOTS = [
+  { name: 'Boys hostel', x: 70.7, y: 9.5 },
+  { name: 'Girls hostel', x: 66.5, y: 31.0 },
+  { name: 'Playground', x: 53.2, y: 43.8 },
+  { name: 'Stationery shop', x: 56.2, y: 57.6 },
+  { name: 'Canteen', x: 37.1, y: 58.3 },
+  { name: 'Auditorium', x: 47.9, y: 62.5 },
+  { name: 'B.Pharm block', x: 31.6, y: 64.7 },
+  { name: 'Administration block', x: 33.6, y: 69.8 },
+  { name: 'Academic block', x: 48.1, y: 69.8 },
+  { name: 'Temple', x: 21.1, y: 77.9 },
+  { name: 'Parking', x: 19.1, y: 84.3 },
+  { name: 'Main gate', x: 24.6, y: 88.1 },
+];
+export const PICKUP_LOCATIONS = CAMPUS_SPOTS.map((s) => s.name);
+
+// Campus map in a dialog. pick: true → tap a pin to choose (resolves the name, or null if closed).
+// pick: false → shows only the selected spot.
+export function openCampusMap({ selected = '', pick = true } = {}) {
+  const dialog = document.createElement('dialog');
+  dialog.className = 'modal modal-map';
+  dialog.setAttribute('aria-labelledby', 'map-title');
+  dialog.innerHTML = `
+    <form method="dialog" class="map-head">
+      <div>
+        <h2 id="map-title">${pick ? 'Choose a meeting spot' : 'Meeting spot'}</h2>
+        <p class="muted small"></p>
+      </div>
+      <button class="btn btn-ghost btn-icon" value="" aria-label="Close map">${icon('x')}</button>
+    </form>
+    <div class="campus-map">
+      <div class="campus-map-inner">
+        <img src="/images/campus-map.webp" width="900" height="1424" alt="ABESIT campus map">
+      </div>
+    </div>`;
+  dialog.querySelector('.map-head p').textContent = pick
+    ? 'Tap a pin to choose where you can meet buyers.'
+    : `The seller meets buyers at: ${selected}.`;
+  const map = dialog.querySelector('.campus-map-inner'); // pins are placed in % of the image
+  for (const spot of CAMPUS_SPOTS) {
+    if (!pick && spot.name !== selected) continue;
+    const pin = document.createElement(pick ? 'button' : 'span');
+    pin.className = 'map-pin';
+    pin.style.left = `${spot.x}%`;
+    pin.style.top = `${spot.y}%`;
+    pin.innerHTML = '<span class="map-pin-label"></span>';
+    pin.firstChild.textContent = spot.name;
+    if (spot.name === selected) pin.dataset.selected = 'true';
+    if (pick) {
+      pin.type = 'button';
+      pin.setAttribute('aria-pressed', spot.name === selected);
+      pin.addEventListener('click', () => dialog.close(spot.name));
+    }
+    map.append(pin);
+  }
+  document.body.append(dialog);
+  dialog.showModal();
+  dialog.querySelector('[data-selected]')?.scrollIntoView({ block: 'center' });
+  return new Promise((resolve) => {
+    dialog.addEventListener('close', () => {
+      resolve(dialog.returnValue || null);
+      setTimeout(() => dialog.remove(), 250); // after the close transition
+    }, { once: true });
+  });
+}
 
 export const REPORT_REASONS = {
   fraud: 'Scam or fraud',
@@ -224,7 +289,7 @@ const NAV = [
 ];
 const current = (key) =>
   (key === page || (key === 'marketplace' && ['product', 'seller'].includes(page)) ? ' aria-current="page"' : '');
-const logo = `<a class="logo" href="/"><span class="logo-mark">${icon('tag')}</span>Campus Marketplace</a>`;
+const logo = '<a class="logo" href="/"><img class="logo-img" src="/images/logo-mark.png" width="58" height="34" alt="">Campus Marketplace</a>';
 
 async function renderHeader(slot) {
   const session = await sessionReady;

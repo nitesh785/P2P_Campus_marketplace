@@ -6,7 +6,7 @@
   <title>Sell an item · Campus Marketplace</title>
   <link rel="stylesheet" href="/src/styles/main.css">
   <link rel="manifest" href="/manifest.json">
-  <link rel="icon" href="/icons/icon-192.png" type="image/png">
+  <link rel="icon" href="/icons/favicon.png" type="image/png">
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <meta name="theme-color" content="#0f766e">
 </head>
@@ -63,8 +63,11 @@
             </div>
             <div class="form-grid-2">
               <label class="field">
-                <span class="field-label">Pickup location</span>
-                <select class="select" name="pickup_location"><option value="">Decide with the buyer</option></select>
+                <span class="field-label">Meeting spot</span>
+                <div class="select-with-btn">
+                  <select class="select" name="pickup_location"><option value="">Decide with the buyer</option></select>
+                  <button type="button" class="btn btn-secondary" id="map-pick" aria-label="Choose meeting spot on the campus map"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#map-pin"></use></svg><span>Map</span></button>
+                </div>
               </label>
               <label class="check" style="align-self: end; padding-bottom: 12px">
                 <input type="checkbox" name="negotiable">
@@ -123,7 +126,7 @@
 
 <script type="module">
   import { supabase, requireUser, showMessage, busy } from '/src/lib/supabase.js';
-  import { icon, imageUrl, productCard, stateBlock, PICKUP_LOCATIONS, renewedExpiry } from '/src/lib/layout.js';
+  import { icon, imageUrl, productCard, stateBlock, PICKUP_LOCATIONS, renewedExpiry, openCampusMap } from '/src/lib/layout.js';
 
   const MAX_PHOTOS = 3;
   const user = await requireUser();
@@ -141,6 +144,12 @@
   ]);
   for (const c of categories ?? []) f.category_id.add(new Option(c.name, c.id));
   for (const place of PICKUP_LOCATIONS) f.pickup_location.add(new Option(place, place));
+  document.getElementById('map-pick').addEventListener('click', async () => {
+    const spot = await openCampusMap({ selected: f.pickup_location.value });
+    if (!spot) return;
+    f.pickup_location.value = spot;
+    f.pickup_location.dispatchEvent(new Event('input', { bubbles: true })); // refresh the preview
+  });
 
   // Edit mode: sell.html?id=<product id> loads the seller's own listing into the form.
   const editId = new URLSearchParams(location.search).get('id');
@@ -168,6 +177,10 @@
       f.category_id.value = data.category_id;
       f.condition.value = data.condition;
       f.quantity.value = data.quantity ?? 1;
+      // Keep an older spot that isn't on the campus map list any more
+      if (data.pickup_location && !PICKUP_LOCATIONS.includes(data.pickup_location)) {
+        f.pickup_location.add(new Option(data.pickup_location, data.pickup_location));
+      }
       f.pickup_location.value = data.pickup_location ?? '';
       f.negotiable.checked = data.negotiable;
       photos = data.image_paths.map((path) => ({ path, src: imageUrl(path) }));
