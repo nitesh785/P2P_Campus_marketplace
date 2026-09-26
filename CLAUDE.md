@@ -72,7 +72,7 @@ Coding style, tools, communication and workflow preferences go here as teammates
 
 - **Phase:** 0, decisions and accounts (see TODO.md).
 - **Done:** README rewritten for zero cost; PRD.md and TODO.md created; database chosen.
-- **Done:** Git repo initialised and committed locally (`main`). Push pending: GitHub account needs collaborator access.
+- **Done:** Git repo pushed to GitHub (`main`).
 - **Not done yet:** code, Supabase project.
 - **Next step:** once the domain and frontend choice are known, continue Phase 1 (folder structure, `.env.example`, `schema.sql`).
 
@@ -81,4 +81,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | Date | Change |
 | --- | --- |
 | 2026-09-25 | Created CLAUDE.md, README.md, PRD.md, TODO.md |
-| 2026-09-26 | Initialised Git, added .gitignore, first commit (push blocked: no write access yet) |
+| 2026-09-26 | Initialised Git, added .gitignore, pushed to GitHub |
