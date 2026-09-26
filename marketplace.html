@@ -30,6 +30,7 @@
           <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#search"></use></svg>
           <input class="input" name="q" type="search" placeholder="Search books, calculators, cycles…">
         </label>
+        <button type="button" class="btn btn-secondary filter-toggle" id="filter-toggle" aria-expanded="false" aria-controls="filters"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#sliders-horizontal"></use></svg><span>Filters</span><span class="count-badge" id="filter-count" hidden></span></button>
         <select class="select" name="condition" aria-label="Condition">
           <option value="">Any condition</option>
           <option>New</option><option>Like New</option><option>Good</option><option>Fair</option><option>Poor</option>
@@ -222,8 +223,27 @@
     document.getElementById('recent-section').hidden = hasFilters() || !recentCount;
   }
 
+  // Phones: extra filters fold away behind a "Filters" button; its badge counts active ones.
+  const toggle = document.getElementById('filter-toggle');
+  const updateFilterCount = () => {
+    const n = ['condition', 'pickup', 'deal', 'min', 'max'].filter((name) => f[name].value).length;
+    document.getElementById('filter-count').textContent = n;
+    document.getElementById('filter-count').hidden = !n;
+  };
+  toggle.addEventListener('click', () => {
+    const open = form.classList.toggle('filters-open');
+    toggle.setAttribute('aria-expanded', open);
+  });
+  form.addEventListener('input', updateFilterCount);
+  updateFilterCount();
+  if (['condition', 'pickup', 'deal', 'min', 'max'].some((name) => f[name].value)) {
+    form.classList.add('filters-open');
+    toggle.setAttribute('aria-expanded', 'true');
+  }
+
   function clearFilters() {
     form.reset();
+    updateFilterCount();
     setCategory('');
     load(true);
   }

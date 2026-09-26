@@ -161,6 +161,7 @@
     if (!current) return;
     if (push) history.pushState(null, '', `?c=${id}`);
     chat.dataset.view = 'thread';
+    document.body.classList.add('in-thread');
     $('thread-empty').hidden = true;
     $('thread').hidden = false;
 
@@ -254,6 +255,7 @@
   function showList() {
     current = null;
     chat.dataset.view = 'list';
+    document.body.classList.remove('in-thread');
     $('thread').hidden = true;
     $('thread-empty').hidden = false;
     renderList();

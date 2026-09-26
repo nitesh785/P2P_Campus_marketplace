@@ -86,12 +86,11 @@
 
 <script type="module">
   import { supabase, requireUser, showMessage } from '/src/lib/supabase.js';
-  import { imageUrl, formatPrice, formatDate, stateBlock, icon, isExpired, renewedExpiry, productCard, skeletonCards, installApp } from '/src/lib/layout.js';
+  import { imageUrl, formatPrice, formatDate, stateBlock, icon, isExpired, renewedExpiry, productCard, skeletonCards } from '/src/lib/layout.js';
 
   // Install card: shown on phones/tablets until the app is installed
   const installCard = document.querySelector('[data-install-card]');
   installCard.hidden = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true || !matchMedia('(pointer: coarse)').matches;
-  installCard.querySelector('[data-install]').addEventListener('click', installApp);
 
   const user = await requireUser();
   const list = document.getElementById('list');

@@ -901,10 +901,6 @@ button { font: inherit; color: inherit; }
 @media (max-width: 600px) {
   .section { padding-block: 56px; }
   .steps, .feature-grid { grid-template-columns: 1fr; }
-  .hero-search { flex-direction: column; }
-  .hero-search .btn { width: 100%; }
-  .hero-actions { flex-direction: column; }
-  .hero-actions .btn { width: 100%; }
   .cta-band { padding: 48px 24px; }
 }
 
@@ -913,6 +909,8 @@ button { font: inherit; color: inherit; }
 .toolbar { display: grid; gap: 14px; margin-bottom: 24px; }
 .toolbar-row { display: grid; grid-template-columns: minmax(200px, 1fr) repeat(4, minmax(0, 175px)); gap: 10px; }
 .toolbar-row > * { min-width: 0; }
+.filter-toggle { display: none; position: relative; }
+.filter-toggle .count-badge { margin-left: 2px; }
 
 .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
 .chips::-webkit-scrollbar { display: none; }
@@ -1123,7 +1121,7 @@ button { font: inherit; color: inherit; }
 @media (hover: hover) and (pointer: fine) { .listing-row .info a:hover { color: var(--brand); } }
 .listing-row .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: var(--text-sm); color: var(--muted); }
 .listing-row .meta strong { color: var(--text); }
-.row-actions { display: flex; gap: 8px; }
+.row-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
 @media (max-width: 760px) {
   .stats { gap: 10px; }
@@ -1503,6 +1501,205 @@ button.map-pin:active { transform: scale(0.9); }
   img { opacity: 0.94; }
 }
 
+/* ---------- Callouts (Wanted board, install band) ---------- */
+
+.callout {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 20px;
+  align-items: center;
+  padding: 24px 28px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-xl);
+  background: var(--accent-50);
+}
+.callout-icon { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; background: var(--accent); color: #16181d; }
+.callout-icon .icon { width: 26px; height: 26px; }
+.callout h2 { font-size: 1.35rem; margin-bottom: 4px; }
+.callout p { color: var(--muted); }
+
+.install-band {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 20px;
+  align-items: center;
+  width: 100%;
+  padding: 22px 26px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 200ms var(--ease-out), border-color 200ms ease, box-shadow 200ms ease;
+}
+.install-band img { border-radius: 16px; box-shadow: var(--shadow-sm); }
+.install-band h2 { font-size: 1.25rem; margin-bottom: 4px; }
+.install-band p { color: var(--muted); }
+.install-band:active { transform: scale(0.99); }
+@media (hover: hover) and (pointer: fine) {
+  .install-band:hover { border-color: var(--brand-100); box-shadow: var(--shadow); }
+}
+
+@media (max-width: 760px) {
+  .callout, .install-band { grid-template-columns: auto 1fr; padding: 18px; gap: 14px; }
+  .callout > .btn, .install-band > .btn { grid-column: 1 / -1; width: 100%; }
+  .callout-icon { width: 44px; height: 44px; border-radius: 12px; }
+  .install-band img { width: 48px; height: 48px; }
+  .callout h2, .install-band h2 { font-size: 1.1rem; }
+  .callout p, .install-band p { font-size: var(--text-sm); }
+}
+
+/* ---------- Bottom navigation (phones, signed in) ---------- */
+
+.bottom-nav { display: none; }
+
+@media (max-width: 900px) {
+  .has-bottom-nav { --bottom-nav-h: 62px; padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom)); }
+  .bottom-nav {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 38;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    height: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--header-bg);
+    backdrop-filter: saturate(160%) blur(14px);
+    -webkit-backdrop-filter: saturate(160%) blur(14px);
+    border-top: 1px solid var(--border);
+  }
+  .bottom-nav a {
+    position: relative;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 3px;
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+    /* Tapped tens of times a day: instant colour change, only a tiny press */
+    transition: transform 120ms var(--ease-out);
+  }
+  .bottom-nav a .icon { width: 22px; height: 22px; margin-block: 3px; } /* 28 px tall, same as the Sell pill */
+  .bottom-nav a[aria-current="page"] { color: var(--brand); }
+  .bottom-nav a:active { transform: scale(0.94); }
+  .bottom-nav .bn-sell .icon {
+    box-sizing: content-box;
+    width: 18px;
+    height: 18px;
+    margin-block: 0;
+    padding: 5px;
+    border-radius: 12px;
+    background: var(--brand);
+    color: var(--on-brand);
+  }
+  .bottom-nav .count-badge { position: absolute; top: 5px; left: calc(50% + 5px); margin: 0; }
+  .in-thread .bottom-nav { display: none; }
+  .in-thread.has-bottom-nav { padding-bottom: 0; }
+  .has-bottom-nav .toast { bottom: calc(var(--bottom-nav-h) + 14px + env(safe-area-inset-bottom)); }
+  .has-bottom-nav .chat { height: calc(100dvh - var(--header-h) - var(--bottom-nav-h)); }
+  .in-thread .chat { height: calc(100dvh - var(--header-h)); }
+}
+
+/* ---------- Phones: tighter, app-like layouts ---------- */
+
+@media (max-width: 900px) {
+  /* Item page: the contact buttons stay reachable while reading */
+  #contact-box {
+    position: sticky;
+    bottom: calc(var(--bottom-nav-h, 0px) + 10px + env(safe-area-inset-bottom));
+    z-index: 5;
+    margin-inline: -8px;
+    padding: 8px;
+    border-radius: var(--radius-lg);
+    background: var(--glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--shadow);
+  }
+
+  /* Marketplace: search + Filters button; the rest folds open */
+  .filter-toggle { display: inline-flex; }
+  .toolbar-row { display: flex; flex-wrap: wrap; }
+  .toolbar-row .search { flex: 1 1 calc(100% - 140px); } /* search + Filters share the first row; dropdowns wrap below */
+  .filter-toggle { flex: none; }
+  .toolbar-row > select { flex: 1 1 calc(50% - 5px); }
+  .toolbar-row-2 { grid-template-columns: 1fr 1fr; }
+  .toolbar:not(.filters-open) .toolbar-row > select,
+  .toolbar:not(.filters-open) .toolbar-row-2 > input { display: none; }
+}
+
+@media (max-width: 600px) {
+  .page { padding-block: 24px 48px; }
+  .page-head { margin-bottom: 20px; }
+  .section { padding-block: 48px; }
+  .section-head { margin-bottom: 24px; }
+  .section-head p { font-size: var(--text-base); }
+
+  /* Landing hero: inline search, one primary action */
+  .hero { padding-block: 28px 20px; }
+  .hero .lead { font-size: var(--text-base); margin-top: 14px; }
+  .hero-search { margin-top: 22px; }
+  .hero-search .btn { width: 52px; padding: 0; }
+  .hero-search .btn-label { display: none; }
+  .hero-actions { margin-top: 12px; }
+  .hero-actions .btn { flex: 1; }
+  .hero-actions .btn-ghost { display: none; }
+  .hero-note { margin-top: 16px; }
+  .hero-grid { gap: 28px; }
+  .collage { aspect-ratio: 1 / 0.8; }
+
+  /* Categories: compact two-column rows instead of tall cards */
+  .cat-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .cat-card { grid-template-columns: auto 1fr; align-items: center; gap: 10px; padding: 10px 12px; font-size: var(--text-sm); line-height: 1.25; border-radius: var(--radius); }
+  .cat-card .cat-icon { width: 36px; height: 36px; border-radius: 10px; }
+  .cat-card .cat-icon .icon { width: 18px; height: 18px; }
+
+  /* Steps and features: icon beside text, not stacked */
+  .steps, .feature-grid { gap: 10px; }
+  .step, .feature {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas: "icon num" "icon title" "icon text";
+    column-gap: 14px;
+    align-items: start;
+    padding: 16px;
+  }
+  .feature { grid-template-areas: "icon title" "icon text"; }
+  .step-icon, .feature .f-icon { grid-area: icon; width: 42px; height: 42px; margin: 0; border-radius: 12px; }
+  .step-num { grid-area: num; font-size: 0.72rem; }
+  .step h3, .feature h3 { grid-area: title; margin-bottom: 2px; font-size: 1rem; }
+  .step p, .feature p { grid-area: text; }
+
+  .trust-list li { padding: 14px; }
+
+  /* Item page: shorter breadcrumb (the title is right below) */
+  .crumbs [aria-current], .crumbs svg:nth-of-type(2) { display: none; }
+  .detail-price { font-size: 1.7rem; }
+
+  /* Dashboard quick actions: three compact tiles */
+  .quick { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .quick a { flex-direction: column; justify-content: center; gap: 8px; padding: 14px 6px; font-size: var(--text-sm); text-align: center; }
+  .quick a small, .quick a > .icon:last-child { display: none; }
+  .quick a .q-icon { width: 38px; height: 38px; }
+
+  /* Wanted, reviews, rows: tighter cards */
+  .wanted-card { padding: 16px; }
+  .listing-row { padding: 10px; gap: 12px; }
+}
+
+/* Sign-in pages on phones: compact brand strip, form gets the rest of the screen */
+@media (max-width: 900px) {
+  .auth { grid-template-rows: auto 1fr; }
+  .auth-emblem { width: 96px; margin-bottom: 10px; }
+  .auth-brand h2 { font-size: 1.7rem; }
+  .auth-brand-body { padding-block: 16px 0; }
+}
+
 /* ---------- Motion ---------- */
 
 /* Landing hero: plays once on arrival (rare page, allowed a little delight) */
@@ -1537,7 +1734,8 @@ button.map-pin:active { transform: scale(0.9); }
   .skeleton { animation: none; }
   .btn:active:not(:disabled), .chip:active, .pcard:active, .cat-card:active, .quick a:active,
   .menu-trigger:active, .thumbs button:active, .previews .remove:active,
-  .save-btn:active, .tool-btn:active, .star-input label:active { transform: none; }
+  .save-btn:active, .tool-btn:active, .star-input label:active,
+  .install-band:active, .bottom-nav a:active { transform: none; }
   .pcard:hover, .cat-card:hover, .quick a:hover { transform: none; }
   .modal, .modal[open] { transform: none; }
   .toast, .toast[data-show="true"] { transform: none; }

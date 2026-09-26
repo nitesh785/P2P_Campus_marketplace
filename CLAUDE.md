@@ -89,6 +89,7 @@ Coding style, tools, communication and workflow preferences go here as teammates
 - **Analytics:** Cloudflare Web Analytics beacon (public token) before `</body>` on every page except `offline.html`. New pages must include it.
 - **Brand assets:** `images/logo-mark.png` (header/footer, transparent), `images/logo-emblem.webp` (large), `images/campus-map.webp` (900 px). Originals (1.4 MB each) live in `design/`; never link them from pages. Icons in `icons/` are generated from the emblem.
 - **Meeting spots:** `CAMPUS_SPOTS` in `src/lib/layout.js` (name + pin x/y %). `openCampusMap()` shows the picker (sell form) or one spot (item page). Adding a spot = one line there.
+- **Phones (≤ 900 px):** signed-in students get a bottom tab bar (`renderBottomNav()` in `layout.js`: Browse, Wanted, Sell, Chats, Me); it hides inside a chat (`body.in-thread`). Anything fixed to the bottom must add `var(--bottom-nav-h)`. Marketplace filters fold behind a Filters button; landing sections use compact icon-beside-text rows at ≤ 600 px. Check phone layouts with the 390 px iframe audit before pushing UI changes.
 - **Install button:** any element with `data-install` opens the install flow (`installApp()` in `layout.js`): the browser's saved install prompt if available, otherwise step-by-step help (iPhone/others). Hidden inside the installed app. Also on the dashboard as a card on touch devices.
 - **Icon files are versioned** (`icons/app-192-v2.png` …). When the logo changes, save new files with a new version and update `manifest.json` + the `apple-touch-icon` link; installed apps only pick up a changed URL. Keep `manifest.json` `id` as `/marketplace.html` so installs stay the same app.
 - **App (PWA):** `manifest.json`, `sw.js` (offline fallback only, never caches data), `icons/`.
@@ -174,3 +175,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-27 | WhatsApp privacy: opt-in switch (profile + sign-up), numbers hidden via column grants + RPC, Wanted chats in Messages |
 | 2026-09-27 | Added official logo (header, footer, sign-in, About, icons) and ABESIT campus map picker for meeting spots |
 | 2026-09-27 | Permanent Install app button (menu, footer, dashboard card) replaces the one-time browser pop-up; versioned icon files so installed apps pick up the new logo |
+| 2026-09-27 | Mobile pass (emil-design-eng): bottom tab bar, compact landing sections, collapsible filters, sticky contact bar, fixed sign-in layout and admin overflow; website copy updated for chat, map, Wanted, ratings, privacy, install |

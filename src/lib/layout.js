@@ -416,6 +416,7 @@ async function renderHeader(slot) {
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) { setPanel(false); toggle.focus(); } });
 
   wireInstallButtons(slot);
+  if (session) renderBottomNav();
 
   slot.querySelectorAll('[data-logout]').forEach((b) => b.addEventListener('click', async () => {
     await supabase.auth.signOut();
@@ -432,7 +433,7 @@ async function renderHeader(slot) {
 
     if (page !== 'messages') {
       const unread = await unreadCount(me.id);
-      slot.querySelectorAll('[data-unread]').forEach((el) => { el.textContent = unread; el.hidden = !unread; });
+      document.querySelectorAll('[data-unread]').forEach((el) => { el.textContent = unread; el.hidden = !unread; });
       slot.querySelector('[data-unread-dot]').hidden = !unread;
     }
   }
@@ -485,16 +486,39 @@ function renderFooter(slot) {
 
 // Every [data-install] control opens the install flow; hidden inside the installed app.
 function wireInstallButtons(root) {
-  root.querySelectorAll('[data-install]').forEach((el) => {
+  root.querySelectorAll('[data-install]:not([data-wired])').forEach((el) => {
+    el.dataset.wired = '';
     el.hidden = isInstalled();
     el.addEventListener('click', installApp);
   });
 }
 
+// Phones: app-style tab bar for signed-in students (hidden on larger screens by CSS).
+function renderBottomNav() {
+  const tabs = [
+    ['marketplace', 'Browse', 'store', '/marketplace.html'],
+    ['wanted', 'Wanted', 'megaphone', '/wanted.html'],
+    ['sell', 'Sell', 'plus', '/sell.html'],
+    ['messages', 'Chats', 'message-circle', '/messages.html'],
+    ['dashboard', 'Me', 'user', '/dashboard.html'],
+  ];
+  const active = { product: 'marketplace', seller: 'marketplace', profile: 'dashboard', admin: 'dashboard' }[page] ?? page;
+  const nav = document.createElement('nav');
+  nav.className = 'bottom-nav';
+  nav.setAttribute('aria-label', 'Quick navigation');
+  nav.innerHTML = tabs.map(([key, label, iconName, href]) => `
+    <a href="${href}" class="${key === 'sell' ? 'bn-sell' : ''}"${key === active ? ' aria-current="page"' : ''}>
+      ${icon(iconName)}<span>${label}</span>${key === 'messages' ? '<span class="count-badge" data-unread hidden></span>' : ''}
+    </a>`).join('');
+  document.body.append(nav);
+  document.body.classList.add('has-bottom-nav');
+}
+
 const headerSlot = document.getElementById('site-header');
 const footerSlot = document.getElementById('site-footer');
 if (headerSlot) renderHeader(headerSlot);
-if (footerSlot) { renderFooter(footerSlot); wireInstallButtons(footerSlot); }
+if (footerSlot) renderFooter(footerSlot);
+wireInstallButtons(document); // header wires its own after it renders
 
 // Installable app (PWA): the service worker only adds an offline fallback, it never caches data.
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
