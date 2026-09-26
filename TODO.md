@@ -30,9 +30,9 @@ Tick items as you finish them (`- [x]`). Items marked **(you)** need the project
 
 ## Phase 2: Authentication (FR-01, FR-02)
 
-- [ ] Enable "Confirm email" in Supabase Auth
-- [ ] Connect Brevo SMTP in Supabase Auth settings
-- [ ] Set the Site URL and redirect URLs
+- [x] Enable "Confirm email" in Supabase Auth
+- [x] Connect Brevo SMTP in Supabase Auth settings
+- [x] Set the Site URL and redirect URLs (local: `http://127.0.0.1:5500`)
 - [x] Registration page (roll number, name, email, phone, password, confirm, consent checkbox)
 - [x] Friendly error for "roll number not found or already registered"
 - [x] Login page and logout button

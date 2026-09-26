@@ -83,8 +83,15 @@ Coding style, tools, communication and workflow preferences go here as teammates
 - **Done:** README rewritten for zero cost; PRD.md and TODO.md created; database chosen.
 - **Done:** Git repo pushed to GitHub (`main`).
 - **Done:** `schema.sql` run in Supabase (project `icphsbadppjnztfxxuui`); URL + publishable key in `src/lib/supabase.js`; register, login, forgot/reset password, logout and a guarded home page built.
-- **Not done yet:** auth flow not yet tested end-to-end; marketplace, listings, dashboard.
-- **Next step:** owner adds test roll numbers, sets Auth URLs + Brevo SMTP, tests sign-up; then Phase 3 (create listing + images).
+- **Done:** Brevo SMTP connected; sign-up → confirmation email → login tested successfully (2026-09-26).
+- **Not done yet:** marketplace, listings, dashboard.
+- **Next step:** Phase 3: create listing + image upload.
+
+## Gotchas (setup lessons)
+
+- **Brevo `525 5.7.1 Unauthorized IP address`:** turn off Brevo → Security → Authorised IPs → "Block unknown IP addresses". Supabase sends from changing IPs, so allowlisting one IP doesn't work.
+- **Failed sign-up leaves an unconfirmed user:** delete it in Supabase → Authentication → Users to free the roll number.
+- **Local testing:** Supabase Auth URL config has Site URL `http://127.0.0.1:5500` and redirect `http://127.0.0.1:5500/**` (VS Code Live Server). Update both when deploying.
 
 ## Change log
 
@@ -95,3 +102,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-26 | Switched verification to roll-number allowlist; frontend set to plain HTML/JS; README, PRD, TODO updated |
 | 2026-09-26 | Roll-number format decided; added supabase/schema.sql and src/lib/supabase.js |
 | 2026-09-26 | Schema run in Supabase; added auth pages (register, login, reset, home with logout) |
+| 2026-09-26 | Brevo SMTP connected (fixed Unauthorized IP error); auth flow tested OK |
