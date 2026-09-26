@@ -165,7 +165,7 @@ a { color: var(--accent); }
 .meta dt { color: var(--muted); }
 .meta dd { margin: 0; }
 
-.description { white-space: pre-line; line-height: 1.5; }
+.description { white-space: pre-line; line-height: 1.5; overflow-wrap: anywhere; }
 .note { color: var(--muted); font-style: italic; }
 
 /* ---------- Marketplace (index.html) ---------- */
@@ -174,7 +174,7 @@ a { color: var(--accent); }
 
 .topbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .topbar h1 { margin: 0; }
-.topbar nav { display: flex; gap: 16px; align-items: center; }
+.topbar nav { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
 
 button.small, .button.small { display: inline-block; padding: 7px 12px; font-size: 0.9rem; }
 
@@ -184,6 +184,7 @@ button.small, .button.small { display: inline-block; padding: 7px 12px; font-siz
 .more { display: block; margin: 20px auto 0; padding: 10px 24px; }
 
 .filters { display: grid; grid-template-columns: 2fr 1fr 1fr 0.7fr 0.7fr; gap: 8px; margin-bottom: 12px; }
+.filters > * { min-width: 0; width: 100%; } /* inputs have a built-in min width that would overflow the grid */
 @media (max-width: 700px) {
   .filters { grid-template-columns: 1fr 1fr; }
   .filters [name="q"] { grid-column: 1 / -1; }
@@ -194,7 +195,7 @@ button.small, .button.small { display: inline-block; padding: 7px 12px; font-siz
   margin: 12px 0 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(160px, 100%), 1fr));
   gap: 14px;
 }
 
@@ -246,6 +247,39 @@ button.small, .button.small { display: inline-block; padding: 7px 12px; font-siz
 .row-main > span { display: grid; gap: 2px; justify-items: start; min-width: 0; }
 .row-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.row-actions > *, .row-actions > .button.small { display: flex; align-items: center; justify-content: center; }
+
+/* ---------- Phones ---------- */
+
+@media (max-width: 600px) {
+  /* Full-bleed page instead of a floating card with wasted margins */
+  main, main.full {
+    margin: 0;
+    min-height: 100dvh;
+    padding: 16px;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  h1 { font-size: 1.25rem; }
+  .price { font-size: 1.4rem; }
+
+  .topbar nav { width: 100%; justify-content: space-between; }
+  #hello { display: none; } /* frees the header line on phones */
+
+  /* Two cards per row on every phone width */
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+
+  /* My listings: actions get their own full-width line */
+  .row-actions { width: 100%; }
+  .row-actions > * { flex: 1; text-align: center; }
+}
+
+/* Comfortable tap targets on touch screens (~44 px) */
+@media (pointer: coarse) {
+  button.small, .button.small { padding: 11px 14px; }
+  button.link { padding: 10px 0; }
+}
 
 /* ---------- Reduced motion: keep fades, drop movement ---------- */
 

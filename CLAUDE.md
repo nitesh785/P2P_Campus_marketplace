@@ -108,6 +108,7 @@ Coding style, tools, communication and workflow preferences go here as teammates
 - **Failed sign-up leaves an unconfirmed user:** delete it in Supabase → Authentication → Users to free the roll number.
 - **CSS `hidden`:** `display: grid/block` rules override the `hidden` attribute; `main.css` has a global `[hidden] { display: none !important; }`. Keep it.
 - **Keep-alive workflow:** GitHub disables scheduled workflows after 60 days without repo activity; re-enable it in the Actions tab if that happens.
+- **Mobile check without a phone:** headless Chrome on Windows won't go narrower than ~500 px; render pages inside 375 px `<iframe>`s to see the real phone layout.
 - **Local testing:** Supabase Auth URL config has Site URL `http://127.0.0.1:5500` and redirect `http://127.0.0.1:5500/**` (VS Code Live Server). Update both when deploying.
 
 ## Change log
@@ -124,3 +125,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-26 | Phase 4: marketplace grid with search, filters, pagination on index.html |
 | 2026-09-26 | Phase 5: My Listings page, edit mode on sell page |
 | 2026-09-26 | Phase 6 security checks passed; keep-alive GitHub Action added |
+| 2026-09-26 | Site deployed on Cloudflare Pages; mobile layout fixed (full-bleed pages, 2-column grid, wrapping header, filter overflow, 44 px tap targets) |
