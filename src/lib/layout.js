@@ -277,6 +277,49 @@ export async function unreadCount(userId) {
     c.last_message_at > (c.buyer_id === userId ? c.buyer_last_read_at : c.seller_last_read_at)).length;
 }
 
+// ---------- Install as an app ----------
+
+// Chrome/Edge/Samsung Internet offer an install prompt once per visit; we keep it for our own
+// button instead of letting the browser show its one-time pop-up.
+let installPrompt = null;
+const isInstalled = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt = e; });
+addEventListener('appinstalled', () => {
+  installPrompt = null;
+  document.querySelectorAll('[data-install]').forEach((el) => { el.hidden = true; });
+});
+
+export async function installApp() {
+  if (installPrompt) {
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    installPrompt = null; // a prompt can only be used once
+    return;
+  }
+  showInstallHelp();
+}
+
+// Browsers without an install prompt (iPhone Safari, Firefox) or after it was used: show the steps.
+function showInstallHelp() {
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const steps = ios
+    ? ['Open this site in <strong>Safari</strong>.', `Tap the <strong>Share</strong> button ${icon('share-2')} at the bottom of the screen.`, 'Scroll down and tap <strong>Add to Home Screen</strong>, then <strong>Add</strong>.']
+    : ['Open this site in <strong>Chrome</strong> (or Edge / Samsung Internet).', 'Tap the browser menu <strong>⋮</strong> at the top right.', 'Tap <strong>Install app</strong> or <strong>Add to Home screen</strong>, then confirm.'];
+  const dialog = document.createElement('dialog');
+  dialog.className = 'modal';
+  dialog.setAttribute('aria-labelledby', 'install-title');
+  dialog.innerHTML = `
+    <form method="dialog">
+      <div class="install-head"><img src="/icons/app-192-v2.png" width="56" height="56" alt=""><div><h2 id="install-title">Install Campus Marketplace</h2><p class="muted small">Get an app icon on your home screen. It opens full screen, like a normal app.</p></div></div>
+      <ol class="install-steps">${steps.map((s) => `<li>${s}</li>`).join('')}</ol>
+      <p class="field-hint">Already installed? Look for Campus Marketplace on your home screen or app list.</p>
+      <div class="modal-actions"><button class="btn btn-primary" value="ok">Got it</button></div>
+    </form>`;
+  document.body.append(dialog);
+  dialog.showModal();
+  dialog.addEventListener('close', () => setTimeout(() => dialog.remove(), 250), { once: true });
+}
+
 // ---------- Header and footer ----------
 
 const page = location.pathname.split('/').pop().replace(/\.html$/, '') || 'index';
@@ -309,6 +352,7 @@ async function renderHeader(slot) {
            <a href="/messages.html">${icon('message-circle')}Messages</a>
            <a href="/profile.html">${icon('user')}Profile</a>
            <a href="/admin.html" data-admin hidden>${icon('shield')}Admin</a>
+           <button type="button" data-install>${icon('smartphone')}Install app</button>
            <button type="button" data-logout>${icon('log-out')}Log out</button>
          </div>
        </div>`
@@ -321,9 +365,11 @@ async function renderHeader(slot) {
        <a href="/dashboard.html#saved">${icon('heart')}Saved items</a>
        <a href="/profile.html"${current('profile')}>${icon('user')}Profile</a>
        <a href="/admin.html" data-admin hidden>${icon('shield')}Admin</a>
+       <button type="button" data-install>${icon('smartphone')}Install app</button>
        <button type="button" data-logout>${icon('log-out')}Log out</button>
        <a class="btn btn-primary btn-block" href="/sell.html">${icon('plus')}Sell an item</a>`
-    : `<hr><a class="btn btn-secondary btn-block" href="/login.html">Log in</a>
+    : `<hr><button type="button" data-install>${icon('smartphone')}Install app</button>
+       <a class="btn btn-secondary btn-block" href="/login.html">Log in</a>
        <a class="btn btn-primary btn-block" href="/register.html">Sign up</a>`;
 
   slot.innerHTML = `
@@ -368,6 +414,8 @@ async function renderHeader(slot) {
     });
   }
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) { setPanel(false); toggle.focus(); } });
+
+  wireInstallButtons(slot);
 
   slot.querySelectorAll('[data-logout]').forEach((b) => b.addEventListener('click', async () => {
     await supabase.auth.signOut();
@@ -423,6 +471,7 @@ function renderFooter(slot) {
               <li><a href="/login.html">Log in</a></li>
               <li><a href="/register.html">Sign up</a></li>
               <li><a href="/profile.html">Profile</a></li>
+              <li><button type="button" class="footer-link" data-install>Install the app</button></li>
             </ul>
           </div>
         </div>
@@ -434,10 +483,18 @@ function renderFooter(slot) {
     </footer>`;
 }
 
+// Every [data-install] control opens the install flow; hidden inside the installed app.
+function wireInstallButtons(root) {
+  root.querySelectorAll('[data-install]').forEach((el) => {
+    el.hidden = isInstalled();
+    el.addEventListener('click', installApp);
+  });
+}
+
 const headerSlot = document.getElementById('site-header');
 const footerSlot = document.getElementById('site-footer');
 if (headerSlot) renderHeader(headerSlot);
-if (footerSlot) renderFooter(footerSlot);
+if (footerSlot) { renderFooter(footerSlot); wireInstallButtons(footerSlot); }
 
 // Installable app (PWA): the service worker only adds an offline fallback, it never caches data.
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});

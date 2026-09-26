@@ -1199,6 +1199,20 @@ button { font: inherit; color: inherit; }
 .about-emblem { display: block; width: min(260px, 70%); height: auto; margin-bottom: 20px; }
 @media (max-width: 900px) { .auth-emblem { width: 140px; margin-bottom: 12px; } }
 
+/* ---------- Install app ---------- */
+
+.footer-link { padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-size: var(--text-sm); cursor: pointer; transition: color 150ms ease; }
+@media (hover: hover) and (pointer: fine) { .footer-link:hover { color: var(--brand); } }
+.install-head { display: flex; gap: 14px; align-items: center; margin-bottom: 16px; }
+.install-head img { border-radius: 14px; box-shadow: var(--shadow-sm); flex: none; }
+.install-head h2 { margin: 0 0 4px; }
+.install-steps { margin: 0 0 12px; padding-left: 22px; display: grid; gap: 10px; }
+.install-steps .icon { width: 16px; height: 16px; vertical-align: -3px; }
+.install-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--brand-100); border-radius: var(--radius-lg); background: var(--brand-50); }
+.install-card img { border-radius: 12px; flex: none; }
+.install-card div { display: grid; flex: 1; min-width: 0; }
+.install-card span { font-size: var(--text-sm); color: var(--muted); }
+
 /* ---------- Campus map picker ---------- */
 
 .select-with-btn { display: flex; gap: 8px; }

@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/src/styles/main.css">
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="/icons/favicon.png" type="image/png">
-  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon-v2.png">
   <meta name="theme-color" content="#0f766e">
 </head>
 <body>
@@ -39,6 +39,12 @@
         <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#chevron-right"></use></svg>
       </a>
     </nav>
+
+    <div class="install-card" data-install-card hidden>
+      <img src="/icons/app-192-v2.png" width="48" height="48" alt="">
+      <div><strong>Get the app</strong><span>Add Campus Marketplace to your home screen for one-tap access.</span></div>
+      <button type="button" class="btn btn-primary btn-sm" data-install>Install</button>
+    </div>
 
     <dl class="stats">
       <div class="stat"><dt><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#tag"></use></svg>Active</dt><dd id="stat-active">–</dd></div>
@@ -80,7 +86,12 @@
 
 <script type="module">
   import { supabase, requireUser, showMessage } from '/src/lib/supabase.js';
-  import { imageUrl, formatPrice, formatDate, stateBlock, icon, isExpired, renewedExpiry, productCard, skeletonCards } from '/src/lib/layout.js';
+  import { imageUrl, formatPrice, formatDate, stateBlock, icon, isExpired, renewedExpiry, productCard, skeletonCards, installApp } from '/src/lib/layout.js';
+
+  // Install card: shown on phones/tablets until the app is installed
+  const installCard = document.querySelector('[data-install-card]');
+  installCard.hidden = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true || !matchMedia('(pointer: coarse)').matches;
+  installCard.querySelector('[data-install]').addEventListener('click', installApp);
 
   const user = await requireUser();
   const list = document.getElementById('list');
