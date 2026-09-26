@@ -46,9 +46,9 @@
               <span class="field-label">Price (₹)</span>
               <div class="input-icon">
                 <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#wallet"></use></svg>
-                <input class="input" name="price" type="number" required min="0" max="200000" step="1" inputmode="numeric" placeholder="500">
+                <input class="input" name="price" type="text" required inputmode="numeric" pattern="[0-9]{1,6}" maxlength="6" autocomplete="off" placeholder="500">
               </div>
-              <span class="field-hint">Enter 0 to give it away for free.</span>
+              <span class="field-hint">Whole rupees, up to ₹2,00,000. Enter 0 to give it away for free.</span>
             </label>
           </div>
         </section>
@@ -65,12 +65,22 @@
         <section class="card">
           <h2 class="card-title" style="font-size: 1.1rem"><span class="num">3</span>Photos</h2>
           <div class="stack">
-            <label class="dropzone" id="dropzone">
-              <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#image-plus"></use></svg>
-              <strong>Add photos</strong>
-              <span class="small">Up to 3 photos. The first one is the cover. They're resized automatically.</span>
-              <input class="visually-hidden" name="photos" type="file" accept="image/*" multiple>
-            </label>
+            <div class="photo-pick" id="dropzone">
+              <!-- Separate camera input: with "multiple", Android opens only the gallery picker -->
+              <label class="dropzone camera-only">
+                <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#camera"></use></svg>
+                <strong>Take photo</strong>
+                <span class="small">Use your camera</span>
+                <input class="visually-hidden" name="camera" type="file" accept="image/*" capture="environment">
+              </label>
+              <label class="dropzone">
+                <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#image-plus"></use></svg>
+                <strong>Choose photos</strong>
+                <span class="small">From your gallery or files</span>
+                <input class="visually-hidden" name="photos" type="file" accept="image/*" multiple>
+              </label>
+              <p class="field-hint">Up to 3 photos. The first one is the cover. They're resized automatically.</p>
+            </div>
             <ul id="previews" class="previews" aria-label="Selected photos"></ul>
           </div>
         </section>
@@ -164,14 +174,16 @@
     renderPreview();
   }
 
-  f.photos.addEventListener('change', () => {
-    const picked = [...f.photos.files];
-    const room = MAX_PHOTOS - photos.length;
-    if (picked.length > room) showMessage(`Only ${MAX_PHOTOS} photos allowed. Extra photos were skipped.`);
-    photos.push(...picked.slice(0, room).map((file) => ({ file, src: URL.createObjectURL(file) })));
-    f.photos.value = ''; // allow picking the same file again after removing it
-    renderPhotos();
-  });
+  for (const input of [f.photos, f.camera]) {
+    input.addEventListener('change', () => {
+      const picked = [...input.files];
+      const room = MAX_PHOTOS - photos.length;
+      if (picked.length > room) showMessage(`Only ${MAX_PHOTOS} photos allowed. Extra photos were skipped.`);
+      photos.push(...picked.slice(0, room).map((file) => ({ file, src: URL.createObjectURL(file) })));
+      input.value = ''; // allow picking the same file again after removing it
+      renderPhotos();
+    });
+  }
 
   // ---------- Live preview ----------
 
@@ -186,7 +198,8 @@
     }, { imageSrc: photos[0]?.src });
     document.getElementById('preview').replaceChildren(card);
   }
-  form.addEventListener('input', () => {
+  form.addEventListener('input', (e) => {
+    if (e.target === f.price) f.price.value = f.price.value.replace(/\D/g, ''); // digits only, e.g. pasted "1,250"
     document.getElementById('desc-count').textContent = f.description.value.length;
     renderPreview();
   });
@@ -215,6 +228,7 @@
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!form.reportValidity()) return;
+    if (Number(f.price.value) > 200000) return showMessage('Price can be at most ₹2,00,000.');
     if (!photos.length) return showMessage('Add at least one photo.');
 
     const button = document.getElementById('submit');

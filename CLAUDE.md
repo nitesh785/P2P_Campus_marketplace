@@ -108,6 +108,9 @@ Coding style, tools, communication and workflow preferences go here as teammates
 
 ## Gotchas (setup lessons)
 
+- **No `type="number"` inputs:** the mouse wheel changes their value while scrolling (a user saw 1250 become 1233). Use `type="text" inputmode="numeric" pattern="[0-9]*"` and strip non-digits on input.
+- **Camera on phones:** a file input with `multiple` opens only the gallery on Android. `sell.html` has a separate `capture="environment"` input for the camera, shown only on touch screens.
+
 - **`form.name` / `form.title`:** these return the form's own attributes, not inputs. Always use `form.elements.name`.
 - **Headless Chrome screenshots:** virtual time doesn't advance CSS transitions, so menus/modals look half-faded in screenshots. Not a bug; check with `el.getAnimations()` (should be `running`).
 - **Visual testing:** copy the site to a scratch folder, swap `src/lib/supabase.js` for a mock with sample data, serve with `python -m http.server`, screenshot with headless Chrome (phones via 390 px iframes).
@@ -135,3 +138,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-26 | Phase 6 security checks passed; keep-alive GitHub Action added |
 | 2026-09-26 | Site deployed on Cloudflare Pages; mobile layout fixed (full-bleed pages, 2-column grid, wrapping header, filter overflow, 44 px tap targets) |
 | 2026-09-26 | Full UI/UX redesign: design system, landing page (new home), marketplace moved to marketplace.html, dashboard replaces my-listings, profile, how-it-works/about/FAQ/privacy/terms/404, login returns to the requested page |
+| 2026-09-27 | Fixed price inputs changing on mouse-wheel scroll (text + numeric keypad); added "Take photo" camera button on the sell page |

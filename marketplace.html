@@ -35,8 +35,8 @@
           <option value="price_asc">Price: low to high</option>
           <option value="price_desc">Price: high to low</option>
         </select>
-        <input class="input" name="min" type="number" min="0" step="1" inputmode="numeric" placeholder="Min ₹" aria-label="Minimum price">
-        <input class="input" name="max" type="number" min="0" step="1" inputmode="numeric" placeholder="Max ₹" aria-label="Maximum price">
+        <input class="input" name="min" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="Min ₹" aria-label="Minimum price">
+        <input class="input" name="max" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="Max ₹" aria-label="Maximum price">
       </div>
       <div class="chips" id="chips" role="group" aria-label="Category"></div>
     </form>
@@ -169,8 +169,10 @@
 
   let timer;
   form.addEventListener('input', (e) => {
+    const typed = ['q', 'min', 'max'].includes(e.target.name);
+    if (e.target.name === 'min' || e.target.name === 'max') e.target.value = e.target.value.replace(/\D/g, '');
     clearTimeout(timer);
-    timer = setTimeout(() => load(true), e.target.name === 'q' || e.target.type === 'number' ? 300 : 0);
+    timer = setTimeout(() => load(true), typed ? 300 : 0);
   });
   form.addEventListener('submit', (e) => { e.preventDefault(); clearTimeout(timer); load(true); });
   chips.addEventListener('click', (e) => {

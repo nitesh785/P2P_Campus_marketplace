@@ -1021,6 +1021,11 @@ button { font: inherit; color: inherit; }
   transition: border-color 150ms ease, background-color 150ms ease;
 }
 .dropzone .icon { width: 28px; height: 28px; color: var(--brand); }
+.photo-pick { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+.photo-pick .field-hint { grid-column: 1 / -1; }
+/* Camera button only where there's likely a camera (phones, tablets) */
+.camera-only { display: none; }
+@media (pointer: coarse) { .camera-only { display: grid; } }
 .dropzone strong { color: var(--text); }
 .dropzone:focus-within { border-color: var(--brand); box-shadow: var(--ring); }
 @media (hover: hover) and (pointer: fine) { .dropzone:hover { border-color: var(--brand); background: var(--brand-50); } }
