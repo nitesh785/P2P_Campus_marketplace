@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard · Campus Marketplace</title>
+  <link rel="stylesheet" href="/src/styles/main.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main id="main" class="page">
+  <div class="container stack" style="gap: 32px">
+    <div class="page-head" style="margin: 0">
+      <div>
+        <h1 id="greeting">Welcome back</h1>
+        <p>Manage your listings and keep them up to date.</p>
+      </div>
+    </div>
+
+    <nav class="quick" aria-label="Quick actions">
+      <a href="sell.html">
+        <span class="q-icon"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#plus"></use></svg></span>
+        <span>Sell an item<small>Post a new listing</small></span>
+        <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#chevron-right"></use></svg>
+      </a>
+      <a href="marketplace.html">
+        <span class="q-icon"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#store"></use></svg></span>
+        <span>Browse marketplace<small>See what's for sale</small></span>
+        <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#chevron-right"></use></svg>
+      </a>
+      <a href="profile.html">
+        <span class="q-icon"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#user"></use></svg></span>
+        <span>Edit profile<small>Name and WhatsApp number</small></span>
+        <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#chevron-right"></use></svg>
+      </a>
+    </nav>
+
+    <dl class="stats">
+      <div class="stat"><dt><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#tag"></use></svg>Active</dt><dd id="stat-active">–</dd></div>
+      <div class="stat"><dt><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#circle-check-big"></use></svg>Sold</dt><dd id="stat-sold">–</dd></div>
+      <div class="stat"><dt><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#package"></use></svg>Total</dt><dd id="stat-total">–</dd></div>
+    </dl>
+
+    <section>
+      <div class="section-head-row" style="margin-bottom: 16px">
+        <h2 style="font-size: 1.35rem">My listings</h2>
+      </div>
+      <ul id="list" class="listing-rows" aria-busy="true"></ul>
+    </section>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+
+<p id="msg" class="toast" role="status" aria-live="polite"></p>
+
+<dialog id="confirm" class="modal" aria-labelledby="confirm-title">
+  <form method="dialog">
+    <h2 id="confirm-title">Delete this listing?</h2>
+    <p class="muted"><strong id="confirm-name"></strong> and its photos will be permanently removed. This cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" value="cancel" autofocus>Cancel</button>
+      <button class="btn btn-primary" value="delete" style="background: var(--error)">Delete</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module">
+  import { supabase, requireUser, showMessage } from '/src/lib/supabase.js';
+  import { imageUrl, formatPrice, formatDate, stateBlock, icon } from '/src/lib/layout.js';
+
+  const user = await requireUser();
+  const list = document.getElementById('list');
+  const bucket = supabase.storage.from('product-images');
+  const dialog = document.getElementById('confirm');
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let listings = [];
+
+  // Skeleton rows while loading
+  list.innerHTML = Array.from({ length: 3 }, () => `
+    <li class="listing-row" aria-hidden="true">
+      <div class="skeleton" style="width: 76px; height: 76px; border-radius: 12px"></div>
+      <div class="stack" style="gap: 8px"><div class="skeleton" style="height: 16px; width: 60%"></div><div class="skeleton" style="height: 12px; width: 35%"></div></div>
+    </li>`).join('');
+
+  const hour = new Date().getHours();
+  const part = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+
+  // ponytail: no pagination here; a student rarely has more than a handful of listings.
+  const [{ data: me }, { data, error }] = await Promise.all([
+    supabase.from('profiles').select('name').eq('id', user.id).single(),
+    supabase.from('products').select('id, title, price, status, image_paths, created_at')
+      .eq('seller_id', user.id).order('created_at', { ascending: false }),
+  ]);
+  document.getElementById('greeting').textContent = `Good ${part}, ${me?.name.split(' ')[0] ?? 'there'}`;
+  list.setAttribute('aria-busy', 'false');
+
+  if (error) {
+    list.replaceChildren(stateBlock({ kind: 'error', iconName: 'triangle-alert', title: 'Something went wrong', text: 'We could not load your listings. Please try again.', action: { label: 'Try again', onClick: () => location.reload() } }));
+  } else {
+    listings = data;
+    list.replaceChildren(...data.map(row));
+    refresh();
+  }
+
+  function refresh() {
+    const sold = listings.filter((p) => p.status === 'sold').length;
+    document.getElementById('stat-active').textContent = listings.length - sold;
+    document.getElementById('stat-sold').textContent = sold;
+    document.getElementById('stat-total').textContent = listings.length;
+    if (!listings.length) {
+      list.replaceChildren(stateBlock({ iconName: 'package', title: "You haven't listed anything yet", text: 'Sell books, gadgets or hostel items you no longer need. It takes about two minutes.', action: { label: 'Sell an item', href: 'sell.html' } }));
+    }
+  }
+
+  function row(p) {
+    const li = document.createElement('li');
+    li.className = 'listing-row';
+    li.innerHTML = `
+      <img alt="">
+      <div class="info">
+        <a></a>
+        <div class="meta"><strong></strong><span class="badge"></span><span class="date"></span></div>
+      </div>
+      <div class="row-actions">
+        <a class="btn btn-secondary btn-sm">${icon('pencil')}Edit</a>
+        <button type="button" class="btn btn-secondary btn-sm" data-act="status"></button>
+        <button type="button" class="btn btn-danger btn-sm" data-act="delete" aria-label="Delete">${icon('trash-2')}</button>
+      </div>`;
+    const href = `product.html?id=${encodeURIComponent(p.id)}`;
+    li.querySelector('img').src = imageUrl(p.image_paths[0]);
+    li.querySelector('.info a').href = href;
+    li.querySelector('.info a').textContent = p.title;
+    li.querySelector('.meta strong').textContent = formatPrice(p.price);
+    li.querySelector('.date').textContent = `Posted ${formatDate(p.created_at)}`;
+    li.querySelector('.row-actions a').href = `sell.html?id=${encodeURIComponent(p.id)}`;
+    li.querySelector('[data-act=delete]').setAttribute('aria-label', `Delete ${p.title}`);
+
+    const badge = li.querySelector('.badge');
+    const statusButton = li.querySelector('[data-act=status]');
+    const render = () => {
+      const sold = p.status === 'sold';
+      badge.textContent = sold ? 'Sold' : 'Available';
+      badge.className = `badge ${sold ? 'badge-error' : 'badge-ok'}`;
+      statusButton.innerHTML = sold ? `${icon('refresh-cw')}Relist` : `${icon('circle-check-big')}Mark sold`;
+    };
+    render();
+
+    statusButton.addEventListener('click', async () => {
+      const status = p.status === 'sold' ? 'available' : 'sold';
+      statusButton.disabled = true;
+      const { error } = await supabase.from('products').update({ status }).eq('id', p.id);
+      statusButton.disabled = false;
+      if (error) return showMessage(error.message);
+      p.status = status;
+      render();
+      refresh();
+      showMessage(status === 'sold' ? 'Marked as sold and hidden from the marketplace.' : 'Back on the marketplace.', true);
+    });
+
+    li.querySelector('[data-act=delete]').addEventListener('click', async () => {
+      document.getElementById('confirm-name').textContent = `"${p.title}"`;
+      dialog.returnValue = '';
+      dialog.showModal();
+      await new Promise((resolve) => dialog.addEventListener('close', resolve, { once: true }));
+      if (dialog.returnValue !== 'delete') return;
+
+      const { error } = await supabase.from('products').delete().eq('id', p.id);
+      if (error) return showMessage(error.message);
+      // ponytail: row first, photos second. If photo removal fails we only leak storage, never show a broken listing.
+      await bucket.remove(p.image_paths);
+
+      // Fade the row out so the list doesn't jump without explanation.
+      await li.animate(
+        reduceMotion
+          ? [{ opacity: 1 }, { opacity: 0 }]
+          : [{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.97)' }],
+        { duration: 150, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' },
+      ).finished;
+      li.remove();
+      listings = listings.filter((x) => x !== p);
+      refresh();
+      showMessage('Listing deleted.', true);
+    });
+
+    return li;
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Profile · Campus Marketplace</title>
+  <link rel="stylesheet" href="/src/styles/main.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main id="main" class="page">
+  <div class="container profile-layout">
+    <aside class="card profile-card">
+      <span class="avatar avatar-lg" id="avatar">…</span>
+      <h1 id="name">Your profile</h1>
+      <span class="badge badge-brand" id="roll"></span>
+      <ul class="profile-facts">
+        <li><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#mail"></use></svg><span id="email"></span></li>
+        <li><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#phone"></use></svg><span id="phone"></span></li>
+        <li><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#clock"></use></svg><span id="joined"></span></li>
+        <li><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#package"></use></svg><span id="count"></span></li>
+      </ul>
+      <a class="btn btn-secondary btn-block" href="dashboard.html" style="margin-top: 12px">
+        <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#layout-dashboard"></use></svg>My listings
+      </a>
+    </aside>
+
+    <div class="stack" style="gap: 24px">
+      <section class="card">
+        <h2 class="card-title" style="font-size: 1.15rem">Edit profile</h2>
+        <form id="profile-form" class="form" novalidate>
+          <div class="form-grid-2">
+            <label class="field">
+              <span class="field-label">Full name</span>
+              <input class="input" name="name" required minlength="2" maxlength="60" autocomplete="name">
+            </label>
+            <label class="field">
+              <span class="field-label">WhatsApp number</span>
+              <input class="input" name="phone" type="tel" required pattern="[0-9]{10,13}" inputmode="numeric" autocomplete="tel">
+            </label>
+          </div>
+          <p class="field-hint">Signed-in students see your name and WhatsApp number on your listings. Your email and roll number can't be changed here.</p>
+          <div><button type="submit" class="btn btn-primary">Save changes</button></div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title" style="font-size: 1.15rem">Change password</h2>
+        <form id="password-form" class="form" novalidate>
+          <div class="form-grid-2">
+            <label class="field">
+              <span class="field-label">New password</span>
+              <input class="input" name="password" type="password" required minlength="6" autocomplete="new-password">
+            </label>
+            <label class="field">
+              <span class="field-label">Confirm new password</span>
+              <input class="input" name="confirm" type="password" required autocomplete="new-password">
+            </label>
+          </div>
+          <div><button type="submit" class="btn btn-secondary">Update password</button></div>
+        </form>
+      </section>
+    </div>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+<p id="msg" class="toast" role="status" aria-live="polite"></p>
+
+<script type="module">
+  import { supabase, requireUser, showMessage, busy } from '/src/lib/supabase.js';
+  import { initials, formatDate } from '/src/lib/layout.js';
+
+  const user = await requireUser();
+  const $ = (id) => document.getElementById(id);
+  const profileForm = $('profile-form');
+  const passwordForm = $('password-form');
+  const pf = profileForm.elements; // profileForm.name would be the form's own name attribute
+  const pw = passwordForm.elements;
+
+  const [{ data: me }, { count }] = await Promise.all([
+    supabase.from('profiles').select('name, phone, roll_no, created_at').eq('id', user.id).single(),
+    supabase.from('products').select('id', { count: 'exact', head: true }).eq('seller_id', user.id),
+  ]);
+
+  function renderCard() {
+    $('avatar').textContent = initials(me.name);
+    $('name').textContent = me.name;
+    $('phone').textContent = me.phone;
+  }
+
+  if (me) {
+    renderCard();
+    $('roll').textContent = me.roll_no;
+    $('email').textContent = user.email;
+    $('joined').textContent = `Joined ${formatDate(me.created_at)}`;
+    $('count').textContent = `${count ?? 0} ${count === 1 ? 'listing' : 'listings'}`;
+    pf.name.value = me.name;
+    pf.phone.value = me.phone;
+  }
+
+  profileForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!profileForm.reportValidity()) return;
+    const changes = { name: pf.name.value.trim(), phone: pf.phone.value.trim() };
+    const { error } = await busy(profileForm.querySelector('button'), 'Saving…', () =>
+      supabase.from('profiles').update(changes).eq('id', user.id));
+    if (error) return showMessage(error.message);
+    Object.assign(me, changes);
+    renderCard();
+    showMessage('Profile updated.', true);
+  });
+
+  passwordForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!passwordForm.reportValidity()) return;
+    if (pw.password.value !== pw.confirm.value) return showMessage('Passwords do not match.');
+    const { error } = await busy(passwordForm.querySelector('button'), 'Updating…', () =>
+      supabase.auth.updateUser({ password: pw.password.value }));
+    if (error) return showMessage(error.message);
+    passwordForm.reset();
+    showMessage('Password updated.', true);
+  });
+</script>
+</body>
+</html>

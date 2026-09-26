@@ -631,20 +631,25 @@ cd campus-marketplace
 6. **Authentication → URL Configuration**: set the Site URL to your deployed Pages URL.
 7. **Table Editor → allowed_students**: import the student list CSV (columns `roll_no`, `full_name`; format `2026CSE102`, courses CSE/CSDS/CSAI/CSIT).
 
-### Suggested folder structure
+### Folder structure
 
 ```text
 campus-marketplace/
-├── index.html
+├── index.html                 # public landing page
+├── login.html, register.html, reset.html
+├── marketplace.html           # browse, search, filter
+├── product.html               # item details + WhatsApp contact
+├── sell.html                  # create / edit listing (?id=)
+├── dashboard.html             # my listings, stats
+├── profile.html
+├── how-it-works.html, about.html, faq.html, privacy.html, terms.html, 404.html
 ├── src/
-│   ├── lib/supabase.js        # createClient(url, anonKey), supabase-js from CDN
-│   ├── pages/                 # login, register, market, product, create, my-listings
-│   ├── components/            # ProductCard, Filters, ImageUploader
-│   └── styles/
-├── supabase/
-│   └── schema.sql             # all SQL from this README
+│   ├── lib/supabase.js        # Supabase client + auth helpers
+│   ├── lib/layout.js          # shared header, footer, product card, states
+│   ├── styles/main.css        # design system
+│   └── icons.svg              # icon sprite (Lucide subset)
+├── supabase/schema.sql        # all database SQL
 ├── .github/workflows/keep-alive.yml
-├── .gitignore                 # includes .env
 └── README.md
 ```
 

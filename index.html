@@ -3,128 +3,234 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Campus Marketplace</title>
-  <link rel="stylesheet" href="src/styles/main.css">
+  <title>Campus Marketplace · Buy and sell on your campus</title>
+  <meta name="description" content="Buy, sell and discover useful things from students around you, in one campus-only marketplace.">
+  <link rel="stylesheet" href="/src/styles/main.css">
+  <script>document.documentElement.classList.add('js');</script>
 </head>
 <body>
-<main class="full">
-  <header class="topbar">
-    <h1>Campus Marketplace</h1>
-    <nav>
-      <span id="hello" class="muted"></span>
-      <a href="my-listings.html">My listings</a>
-      <a class="button small" href="sell.html">Sell an item</a>
-      <button id="logout" type="button" class="link">Log out</button>
-    </nav>
-  </header>
+<div id="site-header"></div>
 
-  <form id="filters" class="filters" role="search">
-    <input name="q" type="search" placeholder="Search books, calculators, cycles…" aria-label="Search">
-    <select name="category" aria-label="Category"><option value="">All categories</option></select>
-    <select name="condition" aria-label="Condition">
-      <option value="">Any condition</option>
-      <option>New</option><option>Like New</option><option>Good</option><option>Fair</option><option>Poor</option>
-    </select>
-    <input name="min" type="number" min="0" step="1" inputmode="numeric" placeholder="Min ₹" aria-label="Minimum price">
-    <input name="max" type="number" min="0" step="1" inputmode="numeric" placeholder="Max ₹" aria-label="Maximum price">
-  </form>
+<main id="main">
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <span class="eyebrow rise"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#graduation-cap"></use></svg>Built for students</span>
+        <h1 class="rise rise-2">Your campus.<br><span class="hl">Your marketplace.</span></h1>
+        <p class="lead rise rise-3">Buy, sell, and discover useful things from students around you, all in one campus community.</p>
 
-  <p id="msg" class="msg" role="status" aria-live="polite"></p>
-  <ul id="grid" class="grid"></ul>
-  <button id="more" type="button" class="secondary more" hidden>Load more</button>
+        <form class="hero-search rise rise-4" action="/marketplace.html" role="search">
+          <label class="input-icon">
+            <span class="visually-hidden">Search the marketplace</span>
+            <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#search"></use></svg>
+            <input class="input" name="q" type="search" placeholder="Try &quot;calculator&quot; or &quot;cycle&quot;">
+          </label>
+          <button class="btn btn-primary btn-lg" type="submit">Search</button>
+        </form>
+        <div class="hero-actions rise rise-5">
+          <a class="btn btn-secondary btn-lg" href="/marketplace.html" data-enter>Explore Marketplace<svg class="icon" aria-hidden="true"><use href="/src/icons.svg#arrow-right"></use></svg></a>
+          <a class="btn btn-ghost btn-lg" href="#how">How it works</a>
+        </div>
+        <p class="hero-note rise rise-5"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#badge-check"></use></svg>Only students on the official roll list can join.</p>
+      </div>
+
+      <div class="collage rise rise-3" aria-hidden="true">
+        <div class="tile tile-1"><svg class="icon"><use href="/src/icons.svg#book-open"></use></svg><span>Books</span></div>
+        <div class="tile tile-2"><svg class="icon"><use href="/src/icons.svg#laptop"></use></svg><span>Electronics</span></div>
+        <div class="tile tile-3"><svg class="icon"><use href="/src/icons.svg#bike"></use></svg><span>Cycles</span></div>
+        <div class="tile tile-4"><svg class="icon"><use href="/src/icons.svg#bed-double"></use></svg><span>Hostel</span></div>
+        <div class="tile tile-5"><svg class="icon"><use href="/src/icons.svg#flask-conical"></use></svg><span>Lab gear</span></div>
+        <div class="bubble bubble-1"><svg class="icon"><use href="/src/icons.svg#message-circle"></use></svg>Hi! Is this still available?</div>
+        <div class="bubble bubble-2"><svg class="icon"><use href="/src/icons.svg#handshake"></use></svg>Yes! Meet at the library?</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories -->
+  <section class="section" id="categories">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Categories</span>
+        <h2>Everything a student needs</h2>
+        <p>From first-semester textbooks to the cycle you'll ride to class.</p>
+      </div>
+      <ul class="cat-grid reveal" id="cats"></ul>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="section section-alt" id="how">
+    <div class="container">
+      <div class="section-head center reveal">
+        <span class="eyebrow">How it works</span>
+        <h2>From listing to handshake in four steps</h2>
+      </div>
+      <ol class="steps reveal">
+        <li class="step">
+          <span class="step-num">01</span>
+          <div class="step-icon"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#search"></use></svg></div>
+          <h3>Find</h3>
+          <p>Browse or search items listed by students on your campus.</p>
+        </li>
+        <li class="step">
+          <span class="step-num">02</span>
+          <div class="step-icon"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#message-circle"></use></svg></div>
+          <h3>Connect</h3>
+          <p>Tap "Contact seller" to message them on WhatsApp.</p>
+        </li>
+        <li class="step">
+          <span class="step-num">03</span>
+          <div class="step-icon"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#map-pin"></use></svg></div>
+          <h3>Meet</h3>
+          <p>Agree on a time and a public spot on campus.</p>
+        </li>
+        <li class="step">
+          <span class="step-num">04</span>
+          <div class="step-icon"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#circle-check-big"></use></svg></div>
+          <h3>Done</h3>
+          <p>Check the item, pay the seller directly, and they mark it as sold.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- Why -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Why Campus Marketplace</span>
+        <h2>Better than scrolling through group chats</h2>
+        <p>Listings don't get buried, you can search and filter, and sold items disappear on their own.</p>
+      </div>
+      <div class="feature-grid reveal">
+        <div class="feature">
+          <div class="f-icon"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#graduation-cap"></use></svg></div>
+          <h3>Built for students</h3>
+          <p>Only roll numbers on your college's official list can create an account.</p>
+        </div>
+        <div class="feature">
+          <div class="f-icon"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#map-pin"></use></svg></div>
+          <h3>Sellers nearby</h3>
+          <p>Everyone is on the same campus, so picking something up is a short walk away.</p>
+        </div>
+        <div class="feature">
+          <div class="f-icon"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#wallet"></use></svg></div>
+          <h3>Student prices</h3>
+          <p>Second-hand books, gear and essentials, with no platform fees on top.</p>
+        </div>
+        <div class="feature">
+          <div class="f-icon"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#message-circle"></use></svg></div>
+          <h3>One-tap contact</h3>
+          <p>Contact the seller on WhatsApp with a message about the item already written.</p>
+        </div>
+        <div class="feature">
+          <div class="f-icon"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#sliders-horizontal"></use></svg></div>
+          <h3>Search and filters</h3>
+          <p>Filter by category, condition and price instead of scrolling through old messages.</p>
+        </div>
+        <div class="feature">
+          <div class="f-icon"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#camera"></use></svg></div>
+          <h3>Sell in minutes</h3>
+          <p>Add up to three photos, a price and a description. Photos are resized for you.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured listings (real data, signed-in students only) -->
+  <section class="section section-alt">
+    <div class="container">
+      <div class="section-head-row reveal">
+        <div class="section-head">
+          <span class="eyebrow">Fresh on campus</span>
+          <h2>Latest listings</h2>
+        </div>
+        <a class="btn btn-secondary" href="/marketplace.html" id="all-listings">Explore all listings<svg class="icon" aria-hidden="true"><use href="/src/icons.svg#arrow-right"></use></svg></a>
+      </div>
+      <ul class="product-grid reveal" id="featured"></ul>
+    </div>
+  </section>
+
+  <!-- Trust -->
+  <section class="section">
+    <div class="container trust">
+      <div class="section-head reveal">
+        <span class="eyebrow">Community</span>
+        <h2>A marketplace for your campus only</h2>
+        <p>Campus Marketplace is deliberately small: one campus, verified roll numbers, and no middleman between buyer and seller.</p>
+      </div>
+      <ul class="trust-list reveal">
+        <li><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#users"></use></svg><div><strong>Student-only community</strong><span>Sign-up checks your roll number against the college list, one account per roll number.</span></div></li>
+        <li><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#eye"></use></svg><div><strong>Transparent listings</strong><span>Photos, condition and price are shown up front, and sold items leave the marketplace.</span></div></li>
+        <li><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#message-circle"></use></svg><div><strong>Direct communication</strong><span>You talk to the seller yourself. Nothing is relayed or hidden.</span></div></li>
+        <li><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#lock"></use></svg><div><strong>Your email stays private</strong><span>Other students see your name and WhatsApp number only on your listings, and only when signed in.</span></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="section" style="padding-top: 0">
+    <div class="container">
+      <div class="cta-band reveal">
+        <h2>Ready to explore your campus marketplace?</h2>
+        <p>See what students around you are selling, or list something you no longer need.</p>
+        <a class="btn btn-on-dark btn-lg" href="/marketplace.html" data-enter>Enter Marketplace<svg class="icon" aria-hidden="true"><use href="/src/icons.svg#arrow-right"></use></svg></a>
+      </div>
+    </div>
+  </section>
 </main>
 
+<div id="site-footer"></div>
+
 <script type="module">
-  import { supabase, requireUser, showMessage } from './src/lib/supabase.js';
+  import { supabase } from '/src/lib/supabase.js';
+  import { icon, categoryIcon, productCard, skeletonCards, stateBlock, sessionReady } from '/src/lib/layout.js';
 
-  const PAGE_SIZE = 20;
-  const user = await requireUser();
-  const form = document.getElementById('filters');
-  const f = form.elements;
-  const grid = document.getElementById('grid');
-  const more = document.getElementById('more');
-  const bucket = supabase.storage.from('product-images');
-  let page = 0;
-  let requestId = 0; // ignore responses that arrive after a newer search started
+  // Categories: same names as the database seed; each links to a filtered marketplace.
+  const CATEGORIES = ['Books', 'Electronics', 'Furniture', 'Stationery', 'Hostel Items', 'Cycles',
+    'Sports Equipment', 'Lab Equipment', 'Clothing', 'Accessories', 'Other'];
+  document.getElementById('cats').innerHTML = CATEGORIES.map((name) => `
+    <li><a class="cat-card" href="/marketplace.html?category=${encodeURIComponent(name)}">
+      <span class="cat-icon">${icon(categoryIcon(name))}</span>${name}
+    </a></li>`).join('');
 
-  const [{ data: me }, { data: categories }] = await Promise.all([
-    supabase.from('profiles').select('name').eq('id', user.id).single(),
-    supabase.from('categories').select('id, name, icon').order('id'),
-  ]);
-  document.getElementById('hello').textContent = me ? `Hi, ${me.name.split(' ')[0]}` : '';
-  for (const c of categories ?? []) f.category.add(new Option(`${c.icon} ${c.name}`, c.id));
+  // Reveal sections once as they scroll into view.
+  const observer = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); observer.unobserve(e.target); }
+  }, { rootMargin: '0px 0px -80px 0px' });
+  document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
 
-  // "calc cas" → 'calc:* & cas:*' so partial words match (prefix search on the full-text index).
-  // Only letters and digits get through, so user input can't break the query syntax.
-  function toPrefixQuery(text) {
-    const words = text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
-    return words.map((w) => `${w}:*`).join(' & ');
-  }
+  // Featured listings: listings are visible to signed-in students only (database rules).
+  const featured = document.getElementById('featured');
+  const session = await sessionReady;
 
-  async function load(reset) {
-    if (reset) page = 0;
-    const id = ++requestId;
-    more.disabled = true;
-
-    let q = supabase
+  if (!session) {
+    document.getElementById('all-listings').hidden = true;
+    featured.replaceChildren(stateBlock({
+      iconName: 'lock',
+      title: 'Listings are for signed-in students',
+      text: 'Log in or create an account with your roll number to see what students on your campus are selling.',
+      action: { label: 'Log in to browse', href: '/login.html' },
+    }));
+  } else {
+    document.querySelectorAll('[data-enter]').forEach((a) => { a.firstChild.textContent = 'Enter Marketplace'; });
+    featured.replaceChildren(...skeletonCards(4));
+    const { data, error } = await supabase
       .from('products')
-      .select('id, title, price, condition, image_paths, categories(name, icon)')
+      .select('id, title, price, condition, image_paths, categories(name), profiles(name)')
       .eq('status', 'available')
       .order('created_at', { ascending: false })
-      .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+      .limit(4);
 
-    const search = toPrefixQuery(f.q.value);
-    if (search) q = q.textSearch('search', search, { config: 'english' });
-    if (f.category.value) q = q.eq('category_id', Number(f.category.value));
-    if (f.condition.value) q = q.eq('condition', f.condition.value);
-    if (f.min.value) q = q.gte('price', Number(f.min.value));
-    if (f.max.value) q = q.lte('price', Number(f.max.value));
-
-    const { data, error } = await q;
-    if (id !== requestId) return;
-    more.disabled = false;
-
-    if (error) return showMessage(error.message);
-    const cards = data.map(card);
-    if (reset) grid.replaceChildren(...cards);
-    else grid.append(...cards);
-
-    more.hidden = data.length < PAGE_SIZE;
-    showMessage(grid.children.length ? '' : 'No items found. Try a different search or filter.');
+    if (error) {
+      featured.replaceChildren(stateBlock({ kind: 'error', iconName: 'triangle-alert', title: 'Something went wrong', text: 'We could not load the latest listings. Please try again.', action: { label: 'Retry', onClick: () => location.reload() } }));
+    } else if (!data.length) {
+      featured.replaceChildren(stateBlock({ iconName: 'package', title: 'No listings yet', text: 'Be the first to list something on your campus.', action: { label: 'Sell an item', href: '/sell.html' } }));
+    } else {
+      featured.replaceChildren(...data.map((p) => productCard(p)));
+    }
   }
-
-  function card(p) {
-    const li = document.createElement('li');
-    li.innerHTML = `
-      <a class="card" href="product.html?id=${p.id}">
-        <img loading="lazy" alt="">
-        <span class="card-body">
-          <span class="card-price"></span>
-          <span class="card-title"></span>
-          <span class="card-meta"></span>
-        </span>
-      </a>`;
-    li.querySelector('img').src = bucket.getPublicUrl(p.image_paths[0]).data.publicUrl;
-    li.querySelector('.card-price').textContent = `₹${p.price.toLocaleString('en-IN')}`;
-    li.querySelector('.card-title').textContent = p.title;
-    li.querySelector('.card-meta').textContent = `${p.categories.icon} ${p.categories.name} · ${p.condition}`;
-    return li;
-  }
-
-  let timer;
-  form.addEventListener('input', () => {
-    clearTimeout(timer);
-    timer = setTimeout(() => load(true), 300); // wait for typing to pause
-  });
-  form.addEventListener('submit', (e) => { e.preventDefault(); clearTimeout(timer); load(true); });
-  more.addEventListener('click', () => { page++; load(false); });
-
-  document.getElementById('logout').addEventListener('click', async () => {
-    await supabase.auth.signOut();
-    location.replace('login.html');
-  });
-
-  if (user) load(true);
 </script>
 </body>
 </html>

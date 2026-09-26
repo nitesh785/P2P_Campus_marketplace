@@ -4,46 +4,75 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Log in · Campus Marketplace</title>
-  <link rel="stylesheet" href="src/styles/main.css">
+  <meta name="description" content="Log in to buy and sell with students on your campus.">
+  <link rel="stylesheet" href="/src/styles/main.css">
 </head>
 <body>
-<main>
-  <h1>Campus Marketplace</h1>
-  <form novalidate>
-    <label>Email
-      <input name="email" type="email" required autocomplete="email">
-    </label>
-    <label>Password
-      <input name="password" type="password" required autocomplete="current-password">
-    </label>
-    <button type="submit">Log in</button>
-    <button type="button" id="forgot" class="link">Forgot password?</button>
-  </form>
-  <p id="msg" class="msg" role="status" aria-live="polite"></p>
-  <p>New here? <a href="register.html">Create an account</a></p>
-</main>
+<div class="auth">
+  <aside class="auth-brand">
+    <a class="logo" href="/"><span class="logo-mark"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#tag"></use></svg></span>Campus Marketplace</a>
+    <div class="auth-brand-body">
+      <h2>Buy. Sell.<br><em>Connect.</em></h2>
+      <p>Your campus marketplace, built for students. Find what you need from people you share a campus with.</p>
+      <ul class="auth-points">
+        <li><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#badge-check"></use></svg>Only students on the official roll list can join</li>
+        <li><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#message-circle"></use></svg>Message sellers directly on WhatsApp</li>
+        <li><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#wallet"></use></svg>Free to use: no fees, no commission</li>
+      </ul>
+    </div>
+    <div class="auth-chips" aria-hidden="true">
+      <span><svg class="icon"><use href="/src/icons.svg#book-open"></use></svg>Books</span>
+      <span><svg class="icon"><use href="/src/icons.svg#laptop"></use></svg>Electronics</span>
+      <span><svg class="icon"><use href="/src/icons.svg#bike"></use></svg>Cycles</span>
+      <span><svg class="icon"><use href="/src/icons.svg#bed-double"></use></svg>Hostel items</span>
+    </div>
+  </aside>
+
+  <main class="auth-main" id="main">
+    <div class="auth-card">
+      <h1>Welcome back</h1>
+      <p class="sub">Log in to continue to the marketplace.</p>
+
+      <form class="form" novalidate>
+        <p id="msg" class="msg" role="status" aria-live="polite" hidden></p>
+        <label class="field">
+          <span class="field-label">Email</span>
+          <input class="input" name="email" type="email" required autocomplete="email" placeholder="you@example.com">
+        </label>
+        <div class="field">
+          <div class="field-row">
+            <label class="field-label" for="password">Password</label>
+            <button type="button" id="forgot" class="link-btn small">Forgot password?</button>
+          </div>
+          <input class="input" id="password" name="password" type="password" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block">Log in</button>
+      </form>
+
+      <p class="auth-foot">Don't have an account? <a href="register.html">Sign up</a></p>
+    </div>
+  </main>
+</div>
 
 <script type="module">
-  import { supabase, pageUrl, showMessage } from './src/lib/supabase.js';
+  import { supabase, pageUrl, showMessage, nextPage, busy } from '/src/lib/supabase.js';
 
   const form = document.querySelector('form');
 
   const { data: { session } } = await supabase.auth.getSession();
-  if (session) location.replace('index.html');
+  if (session) location.replace(nextPage());
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!form.reportValidity()) return;
 
-    const button = form.querySelector('button[type=submit]');
-    button.disabled = true;
-    const { error } = await supabase.auth.signInWithPassword({
-      email: form.email.value.trim(),
-      password: form.password.value,
-    });
-    button.disabled = false;
+    const { error } = await busy(form.querySelector('[type=submit]'), 'Logging in…', () =>
+      supabase.auth.signInWithPassword({
+        email: form.email.value.trim(),
+        password: form.password.value,
+      }));
 
-    if (!error) return location.replace('index.html');
+    if (!error) return location.replace(nextPage());
     showMessage(error.message.includes('not confirmed')
       ? 'Please open the confirmation link in your email first.'
       : 'Wrong email or password.');
@@ -51,7 +80,10 @@
 
   document.getElementById('forgot').addEventListener('click', async () => {
     const email = form.email.value.trim();
-    if (!email) return showMessage('Enter your email above first.');
+    if (!email) {
+      form.email.focus();
+      return showMessage('Enter your email above first, then tap "Forgot password?".');
+    }
     await supabase.auth.resetPasswordForEmail(email, { redirectTo: pageUrl('reset.html') });
     // Same message either way, so nobody can probe which emails are registered.
     showMessage('If that email is registered, a reset link is on its way.', true);

@@ -4,63 +4,141 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Item · Campus Marketplace</title>
-  <link rel="stylesheet" href="src/styles/main.css">
+  <link rel="stylesheet" href="/src/styles/main.css">
 </head>
 <body>
-<main class="wide">
-  <p><a href="index.html">← Back</a></p>
-  <p id="msg" class="msg" role="status" aria-live="polite"></p>
+<div id="site-header"></div>
 
-  <article id="product" hidden>
-    <div id="gallery" class="gallery" tabindex="0" aria-label="Photos"></div>
-    <div id="thumbs" class="thumbs"></div>
+<main id="main" class="page">
+  <div class="container">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="marketplace.html">Marketplace</a>
+      <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#chevron-right"></use></svg>
+      <a id="crumb-cat" href="marketplace.html">Category</a>
+      <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#chevron-right"></use></svg>
+      <span id="crumb-title" aria-current="page">Item</span>
+    </nav>
 
-    <h1 id="title"></h1>
-    <p class="price"><span id="price"></span> <span id="sold" class="badge" hidden>Sold</span></p>
+    <!-- Loading skeleton -->
+    <div id="loading" class="detail" aria-hidden="true">
+      <div class="skeleton" style="aspect-ratio: 4 / 3; border-radius: 18px"></div>
+      <div class="stack">
+        <div class="skeleton" style="height: 14px; width: 30%"></div>
+        <div class="skeleton" style="height: 36px; width: 85%"></div>
+        <div class="skeleton" style="height: 40px; width: 40%"></div>
+        <div class="skeleton" style="height: 110px"></div>
+        <div class="skeleton" style="height: 52px"></div>
+      </div>
+    </div>
 
-    <dl class="meta">
-      <dt>Condition</dt><dd id="condition"></dd>
-      <dt>Category</dt><dd id="category"></dd>
-      <dt>Seller</dt><dd id="seller"></dd>
-      <dt>Posted</dt><dd id="posted"></dd>
-    </dl>
+    <div id="missing" hidden></div>
 
-    <p id="description" class="description"></p>
+    <article id="product" class="detail" hidden>
+      <div>
+        <div id="gallery" class="gallery" tabindex="0" aria-label="Photos"></div>
+        <div id="thumbs" class="thumbs"></div>
+      </div>
 
-    <a id="contact" class="button whatsapp" target="_blank" rel="noopener">Contact seller on WhatsApp</a>
-    <p id="own" class="note" hidden>This is your listing. <a href="my-listings.html">Manage it in My Listings</a></p>
-  </article>
+      <div class="detail-info">
+        <div>
+          <span class="eyebrow" id="category"></span>
+          <h1 id="title" style="margin-top: 8px"></h1>
+        </div>
+        <div>
+          <div class="detail-price" id="price"></div>
+          <div class="badges" style="margin-top: 10px">
+            <span class="badge badge-brand" id="condition"></span>
+            <span class="badge badge-ok" id="available">Available</span>
+            <span class="badge badge-error" id="sold" hidden>Sold</span>
+          </div>
+        </div>
+
+        <div class="seller-card">
+          <span class="avatar" id="seller-initials"></span>
+          <div>
+            <strong id="seller"></strong>
+            <span>Student seller · posted <span id="posted"></span></span>
+          </div>
+        </div>
+
+        <a id="contact" class="btn btn-whatsapp btn-lg btn-block" target="_blank" rel="noopener">
+          <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#message-circle"></use></svg>Contact seller on WhatsApp
+        </a>
+        <div id="own" class="stack" hidden>
+          <div class="msg" data-tone="ok">This is your listing.</div>
+          <a id="edit" class="btn btn-secondary btn-block"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#pencil"></use></svg>Edit listing</a>
+        </div>
+
+        <div class="tip">
+          <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#info"></use></svg>
+          <span>Meet in a public place on campus and check the item before you pay. Payment happens directly between you and the seller.</span>
+        </div>
+
+        <div class="card desc-card">
+          <h2>Description</h2>
+          <p id="description"></p>
+        </div>
+      </div>
+    </article>
+
+    <section id="related-section" class="section" style="padding-bottom: 0" hidden>
+      <div class="section-head-row">
+        <div class="section-head"><h2 style="font-size: 1.4rem">More in <span id="related-cat"></span></h2></div>
+        <a class="btn btn-secondary" id="related-all" href="marketplace.html">See all<svg class="icon" aria-hidden="true"><use href="/src/icons.svg#arrow-right"></use></svg></a>
+      </div>
+      <ul class="product-grid" id="related"></ul>
+    </section>
+  </div>
 </main>
 
+<div id="site-footer"></div>
+
 <script type="module">
-  import { supabase, requireUser, showMessage } from './src/lib/supabase.js';
+  import { supabase, requireUser } from '/src/lib/supabase.js';
+  import { productCard, stateBlock, initials, formatPrice, formatDate, imageUrl, icon, categoryIcon } from '/src/lib/layout.js';
 
   const user = await requireUser();
   const id = new URLSearchParams(location.search).get('id');
   const $ = (elId) => document.getElementById(elId);
 
-  const { data: p } = await supabase
+  const { data: p, error } = await supabase
     .from('products')
-    .select('*, categories(name, icon), profiles(name, phone)')
+    .select('*, categories(name), profiles(name, phone)')
     .eq('id', id ?? '')
     .maybeSingle();
 
+  $('loading').hidden = true;
+
   if (!p) {
-    showMessage('This listing was not found. It may have been deleted.');
+    $('crumb-title').textContent = error ? 'Error' : 'Not found';
+    $('crumb-cat').hidden = true;
+    $('missing').hidden = false;
+    $('missing').replaceChildren(error
+      ? stateBlock({ tag: 'div', kind: 'error', iconName: 'triangle-alert', title: 'Something went wrong', text: 'We could not load this listing. Please try again.', action: { label: 'Try again', onClick: () => location.reload() } })
+      : stateBlock({ tag: 'div', iconName: 'search', title: 'Listing not found', text: 'It may have been deleted by the seller.', action: { label: 'Back to marketplace', href: 'marketplace.html' } }));
   } else {
+    const catName = p.categories.name;
+    const catLink = `marketplace.html?category=${encodeURIComponent(catName)}`;
     document.title = `${p.title} · Campus Marketplace`;
+    $('crumb-cat').textContent = catName;
+    $('crumb-cat').href = catLink;
+    $('crumb-title').textContent = p.title;
+    $('category').innerHTML = icon(categoryIcon(catName));
+    $('category').append(catName);
     $('title').textContent = p.title;
-    $('price').textContent = `₹${p.price.toLocaleString('en-IN')}`;
+    $('price').textContent = formatPrice(p.price);
     $('condition').textContent = p.condition;
-    $('category').textContent = `${p.categories.icon} ${p.categories.name}`;
     $('seller').textContent = p.profiles.name;
-    $('posted').textContent = new Date(p.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    $('seller-initials').textContent = initials(p.profiles.name);
+    $('posted').textContent = formatDate(p.created_at);
     $('description').textContent = p.description;
 
     const sold = p.status === 'sold';
     const mine = p.seller_id === user.id;
     $('sold').hidden = !sold;
+    $('available').hidden = sold;
     $('own').hidden = !mine;
+    $('edit').href = `sell.html?id=${encodeURIComponent(p.id)}`;
     $('contact').hidden = sold || mine;
 
     // ponytail: a 10-digit number is assumed Indian (+91); longer numbers already include a country code.
@@ -68,12 +146,27 @@
     const text = `Hi, is "${p.title}" still available? (Campus Marketplace)`;
     $('contact').href = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
 
-    renderGallery(p.image_paths.map((path) =>
-      supabase.storage.from('product-images').getPublicUrl(path).data.publicUrl));
+    renderGallery(p.image_paths.map(imageUrl), p.title);
     $('product').hidden = false;
+
+    // Related listings: same category, still available, not this one
+    const { data: related } = await supabase
+      .from('products')
+      .select('id, title, price, condition, image_paths, categories(name), profiles(name)')
+      .eq('status', 'available')
+      .eq('category_id', p.category_id)
+      .neq('id', p.id)
+      .order('created_at', { ascending: false })
+      .limit(4);
+    if (related?.length) {
+      $('related-cat').textContent = catName;
+      $('related-all').href = catLink;
+      $('related').replaceChildren(...related.map((r) => productCard(r)));
+      $('related-section').hidden = false;
+    }
   }
 
-  function renderGallery(urls) {
+  function renderGallery(urls, title) {
     const gallery = $('gallery');
     const thumbs = $('thumbs');
     const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -81,7 +174,7 @@
     const slides = urls.map((url, i) => {
       const img = document.createElement('img');
       img.src = url;
-      img.alt = `Photo ${i + 1} of ${urls.length}`;
+      img.alt = `${title}, photo ${i + 1} of ${urls.length}`;
       return img;
     });
     gallery.replaceChildren(...slides);
@@ -91,8 +184,10 @@
       const b = document.createElement('button');
       b.type = 'button';
       b.setAttribute('aria-label', `Show photo ${i + 1}`);
-      b.innerHTML = '<img alt="">';
-      b.firstChild.src = url;
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = '';
+      b.append(img);
       b.onclick = () => slides[i].scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'nearest', inline: 'start' });
       return b;
     });

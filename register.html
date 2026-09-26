@@ -3,43 +3,87 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Register · Campus Marketplace</title>
-  <link rel="stylesheet" href="src/styles/main.css">
+  <title>Sign up · Campus Marketplace</title>
+  <meta name="description" content="Create your Campus Marketplace account with your roll number.">
+  <link rel="stylesheet" href="/src/styles/main.css">
 </head>
 <body>
-<main>
-  <h1>Create account</h1>
-  <form novalidate>
-    <label>Roll number <small>e.g. 2026CSE102</small>
-      <input name="roll_no" required autocomplete="off" autocapitalize="characters">
-    </label>
-    <label>Full name
-      <input name="name" required minlength="2" maxlength="60" autocomplete="name">
-    </label>
-    <label>Email <small>any email you can open</small>
-      <input name="email" type="email" required autocomplete="email">
-    </label>
-    <label>WhatsApp number <small>10-digit mobile number, digits only</small>
-      <input name="phone" type="tel" required pattern="[0-9]{10,13}" inputmode="numeric" autocomplete="tel">
-    </label>
-    <label>Password <small>at least 6 characters</small>
-      <input name="password" type="password" required minlength="6" autocomplete="new-password">
-    </label>
-    <label>Confirm password
-      <input name="confirm" type="password" required autocomplete="new-password">
-    </label>
-    <label class="check">
-      <input name="consent" type="checkbox" required>
-      I agree that logged-in students can see my name and WhatsApp number on my listings.
-    </label>
-    <button type="submit">Create account</button>
-  </form>
-  <p id="msg" class="msg" role="status" aria-live="polite"></p>
-  <p>Already registered? <a href="login.html">Log in</a></p>
-</main>
+<div class="auth">
+  <aside class="auth-brand">
+    <a class="logo" href="/"><span class="logo-mark"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#tag"></use></svg></span>Campus Marketplace</a>
+    <div class="auth-brand-body">
+      <h2>Your campus.<br><em>Your marketplace.</em></h2>
+      <p>Join with your roll number and start buying and selling with students around you.</p>
+      <ul class="auth-points">
+        <li><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#graduation-cap"></use></svg>One account per roll number</li>
+        <li><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#camera"></use></svg>Post an item with photos in about two minutes</li>
+        <li><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#lock"></use></svg>Your email stays private</li>
+      </ul>
+    </div>
+    <div class="auth-chips" aria-hidden="true">
+      <span><svg class="icon"><use href="/src/icons.svg#pencil-ruler"></use></svg>Stationery</span>
+      <span><svg class="icon"><use href="/src/icons.svg#flask-conical"></use></svg>Lab equipment</span>
+      <span><svg class="icon"><use href="/src/icons.svg#armchair"></use></svg>Furniture</span>
+    </div>
+  </aside>
+
+  <main class="auth-main" id="main">
+    <div class="auth-card">
+      <div id="signup">
+        <h1>Create your account</h1>
+        <p class="sub">It's free and takes less than a minute.</p>
+
+        <form class="form" novalidate>
+          <p id="msg" class="msg" role="status" aria-live="polite" hidden></p>
+          <label class="field">
+            <span class="field-label">Roll number</span>
+            <input class="input" name="roll_no" required autocomplete="off" autocapitalize="characters" placeholder="2026CSE102">
+            <span class="field-hint">Courses: CSE, CSDS, CSAI, CSIT</span>
+          </label>
+          <label class="field">
+            <span class="field-label">Full name</span>
+            <input class="input" name="name" required minlength="2" maxlength="60" autocomplete="name">
+          </label>
+          <label class="field">
+            <span class="field-label">Email</span>
+            <input class="input" name="email" type="email" required autocomplete="email" placeholder="you@example.com">
+            <span class="field-hint">Any email you can open. We'll send a confirmation link.</span>
+          </label>
+          <label class="field">
+            <span class="field-label">WhatsApp number</span>
+            <input class="input" name="phone" type="tel" required pattern="[0-9]{10,13}" inputmode="numeric" autocomplete="tel" placeholder="10-digit mobile number">
+          </label>
+          <div class="form-grid-2">
+            <label class="field">
+              <span class="field-label">Password</span>
+              <input class="input" name="password" type="password" required minlength="6" autocomplete="new-password">
+            </label>
+            <label class="field">
+              <span class="field-label">Confirm password</span>
+              <input class="input" name="confirm" type="password" required autocomplete="new-password">
+            </label>
+          </div>
+          <label class="check">
+            <input name="consent" type="checkbox" required>
+            <span>I agree that signed-in students can see my name and WhatsApp number on my listings. See the <a href="privacy.html">Privacy Policy</a>.</span>
+          </label>
+          <button type="submit" class="btn btn-primary btn-lg btn-block">Create account</button>
+        </form>
+        <p class="auth-foot">Already have an account? <a href="login.html">Log in</a></p>
+      </div>
+
+      <div id="done" class="state" hidden>
+        <div class="state-icon"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#mail"></use></svg></div>
+        <h3>Check your email</h3>
+        <p>We sent a confirmation link. Open it, then log in to start buying and selling.</p>
+        <a class="btn btn-primary" href="login.html">Go to login</a>
+      </div>
+    </div>
+  </main>
+</div>
 
 <script type="module">
-  import { supabase, ROLL_NO_PATTERN, pageUrl, showMessage } from './src/lib/supabase.js';
+  import { supabase, ROLL_NO_PATTERN, pageUrl, showMessage, busy } from '/src/lib/supabase.js';
 
   const form = document.querySelector('form');
 
@@ -52,17 +96,15 @@
     if (!ROLL_NO_PATTERN.test(roll_no)) return showMessage('Roll number must look like 2026CSE102 (courses CSE, CSDS, CSAI, CSIT).');
     if (f.password !== f.confirm) return showMessage('Passwords do not match.');
 
-    const button = form.querySelector('button');
-    button.disabled = true;
-    const { data, error } = await supabase.auth.signUp({
-      email: f.email.trim(),
-      password: f.password,
-      options: {
-        data: { roll_no, name: f.name.trim(), phone: f.phone.trim() },
-        emailRedirectTo: pageUrl('login.html'),
-      },
-    });
-    button.disabled = false;
+    const { data, error } = await busy(form.querySelector('[type=submit]'), 'Creating account…', () =>
+      supabase.auth.signUp({
+        email: f.email.trim(),
+        password: f.password,
+        options: {
+          data: { roll_no, name: f.name.trim(), phone: f.phone.trim() },
+          emailRedirectTo: pageUrl('login.html'),
+        },
+      }));
 
     // The database sign-up trigger rejects unknown or already-used roll numbers;
     // Supabase reports that as a generic "Database error saving new user".
@@ -74,8 +116,8 @@
     // Supabase hides whether an email exists; an empty identities list means it does.
     if (data.user?.identities?.length === 0) return showMessage('This email is already registered. Try logging in.');
 
-    form.hidden = true;
-    showMessage('Account created! Open the confirmation link we emailed you, then log in.', true);
+    document.getElementById('signup').hidden = true;
+    document.getElementById('done').hidden = false;
   });
 </script>
 </body>

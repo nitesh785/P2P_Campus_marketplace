@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Marketplace · Campus Marketplace</title>
+  <link rel="stylesheet" href="/src/styles/main.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main id="main" class="page">
+  <div class="container">
+    <div class="page-head">
+      <div>
+        <h1>Marketplace</h1>
+        <p>Everything students on your campus are selling right now.</p>
+      </div>
+      <a class="btn btn-primary mobile-only" href="sell.html"><svg class="icon" aria-hidden="true"><use href="/src/icons.svg#plus"></use></svg>Sell an item</a>
+    </div>
+
+    <form id="filters" class="toolbar" role="search">
+      <div class="toolbar-row">
+        <label class="input-icon search">
+          <span class="visually-hidden">Search</span>
+          <svg class="icon" aria-hidden="true"><use href="/src/icons.svg#search"></use></svg>
+          <input class="input" name="q" type="search" placeholder="Search books, calculators, cycles…">
+        </label>
+        <select class="select" name="condition" aria-label="Condition">
+          <option value="">Any condition</option>
+          <option>New</option><option>Like New</option><option>Good</option><option>Fair</option><option>Poor</option>
+        </select>
+        <select class="select" name="sort" aria-label="Sort by">
+          <option value="">Newest first</option>
+          <option value="price_asc">Price: low to high</option>
+          <option value="price_desc">Price: high to low</option>
+        </select>
+        <input class="input" name="min" type="number" min="0" step="1" inputmode="numeric" placeholder="Min ₹" aria-label="Minimum price">
+        <input class="input" name="max" type="number" min="0" step="1" inputmode="numeric" placeholder="Max ₹" aria-label="Maximum price">
+      </div>
+      <div class="chips" id="chips" role="group" aria-label="Category"></div>
+    </form>
+
+    <div class="results-bar"><span id="count" aria-live="polite"></span></div>
+    <ul id="grid" class="product-grid" aria-busy="true"></ul>
+    <div class="load-more"><button id="more" type="button" class="btn btn-secondary" hidden>Load more</button></div>
+  </div>
+</main>
+
+<div id="site-footer"></div>
+
+<script type="module">
+  import { supabase, requireUser } from '/src/lib/supabase.js';
+  import { icon, categoryIcon, productCard, skeletonCards, stateBlock } from '/src/lib/layout.js';
+
+  const PAGE_SIZE = 20;
+  await requireUser();
+
+  const form = document.getElementById('filters');
+  const f = form.elements;
+  const grid = document.getElementById('grid');
+  const more = document.getElementById('more');
+  const count = document.getElementById('count');
+  const chips = document.getElementById('chips');
+  let page = 0;
+  let category = ''; // category id
+  let requestId = 0; // ignore responses that arrive after a newer search started
+
+  // Category chips from the database
+  const { data: categories } = await supabase.from('categories').select('id, name').order('id');
+  const chip = (id, label, iconName) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chip';
+    b.dataset.id = id;
+    b.innerHTML = iconName ? icon(iconName) : '';
+    b.append(label);
+    return b;
+  };
+  chips.replaceChildren(chip('', 'All'), ...(categories ?? []).map((c) => chip(c.id, c.name, categoryIcon(c.name))));
+  const setCategory = (id) => {
+    category = String(id);
+    chips.querySelectorAll('.chip').forEach((b) => b.setAttribute('aria-pressed', b.dataset.id === category));
+  };
+
+  // Restore filters from the URL (?q=, ?category=<name>, ...) so links and refreshes keep them
+  const params = new URLSearchParams(location.search);
+  for (const name of ['q', 'condition', 'sort', 'min', 'max']) if (params.get(name)) f[name].value = params.get(name);
+  setCategory(categories?.find((c) => c.name === params.get('category'))?.id ?? '');
+
+  function syncUrl() {
+    const p = new URLSearchParams();
+    for (const name of ['q', 'condition', 'sort', 'min', 'max']) if (f[name].value) p.set(name, f[name].value);
+    const catName = categories?.find((c) => String(c.id) === category)?.name;
+    if (catName) p.set('category', catName);
+    const query = p.toString();
+    history.replaceState(null, '', query ? `?${query}` : location.pathname);
+  }
+
+  const hasFilters = () => category || ['q', 'condition', 'min', 'max'].some((n) => f[n].value);
+
+  // "calc cas" → 'calc:* & cas:*' so partial words match (prefix search on the full-text index).
+  // Only letters and digits get through, so user input can't break the query syntax.
+  function toPrefixQuery(text) {
+    const words = text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+    return words.map((w) => `${w}:*`).join(' & ');
+  }
+
+  async function load(reset) {
+    if (reset) {
+      page = 0;
+      grid.replaceChildren(...skeletonCards(8));
+      grid.setAttribute('aria-busy', 'true');
+      syncUrl();
+    }
+    const id = ++requestId;
+    more.disabled = true;
+
+    let q = supabase
+      .from('products')
+      .select('id, title, price, condition, image_paths, categories(name), profiles(name)', { count: 'exact' })
+      .eq('status', 'available');
+
+    const search = toPrefixQuery(f.q.value);
+    if (search) q = q.textSearch('search', search, { config: 'english' });
+    if (category) q = q.eq('category_id', Number(category));
+    if (f.condition.value) q = q.eq('condition', f.condition.value);
+    if (f.min.value) q = q.gte('price', Number(f.min.value));
+    if (f.max.value) q = q.lte('price', Number(f.max.value));
+
+    if (f.sort.value === 'price_asc') q = q.order('price', { ascending: true });
+    else if (f.sort.value === 'price_desc') q = q.order('price', { ascending: false });
+    q = q.order('created_at', { ascending: false }).range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+
+    const { data, error, count: total } = await q;
+    if (id !== requestId) return;
+    more.disabled = false;
+    grid.setAttribute('aria-busy', 'false');
+
+    if (error) {
+      more.hidden = true;
+      count.textContent = '';
+      return grid.replaceChildren(stateBlock({
+        kind: 'error', iconName: 'triangle-alert',
+        title: 'Something went wrong', text: 'We could not load listings. Please check your connection and try again.',
+        action: { label: 'Try again', onClick: () => load(true) },
+      }));
+    }
+
+    const cards = data.map((p) => productCard(p));
+    if (reset) grid.replaceChildren(...cards);
+    else grid.append(...cards);
+
+    count.textContent = total ? `${total} ${total === 1 ? 'item' : 'items'}` : '';
+    more.hidden = grid.children.length >= (total ?? 0);
+
+    if (!grid.children.length) {
+      grid.replaceChildren(hasFilters()
+        ? stateBlock({ iconName: 'search', title: 'No listings found', text: 'Try changing your search or filters.', action: { label: 'Clear filters', onClick: clearFilters } })
+        : stateBlock({ iconName: 'package', title: 'Nothing for sale yet', text: 'Be the first student to list something.', action: { label: 'Sell an item', href: 'sell.html' } }));
+    }
+  }
+
+  function clearFilters() {
+    form.reset();
+    setCategory('');
+    load(true);
+  }
+
+  let timer;
+  form.addEventListener('input', (e) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => load(true), e.target.name === 'q' || e.target.type === 'number' ? 300 : 0);
+  });
+  form.addEventListener('submit', (e) => { e.preventDefault(); clearTimeout(timer); load(true); });
+  chips.addEventListener('click', (e) => {
+    const b = e.target.closest('.chip');
+    if (!b || b.dataset.id === category) return;
+    setCategory(b.dataset.id);
+    load(true);
+  });
+  more.addEventListener('click', () => { page++; load(false); });
+
+  load(true);
+</script>
+</body>
+</html>

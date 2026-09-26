@@ -62,7 +62,7 @@ Tick items as you finish them (`- [x]`). Items marked **(you)** need the project
 
 ## Phase 5: Seller dashboard and contact (FR-09, FR-10, FR-11)
 
-- [x] My Listings page (`my-listings.html`)
+- [x] My Listings page (now part of `dashboard.html`)
 - [x] Edit listing, including replacing images (`sell.html?id=`)
 - [x] Delete listing, which also deletes its storage images
 - [x] Mark as sold / mark as available again
@@ -87,6 +87,16 @@ Tick items as you finish them (`- [x]`). Items marked **(you)** need the project
 - [ ] **(you)** Run the keep-alive workflow once manually (GitHub → Actions → Run workflow)
 - [ ] Final end-to-end test on the live site
 - [ ] Prepare the demo: seed 10–15 realistic listings, screenshots, slides
+
+## Phase 8: UI/UX redesign
+
+- [x] Design system (`main.css` tokens + components), Plus Jakarta Sans, Lucide icon subset
+- [x] Landing page as new home; marketplace moved to `marketplace.html`
+- [x] Split-screen login / sign-up / reset
+- [x] Dashboard (stats, quick actions, my listings), profile (edit name/phone, change password)
+- [x] How it works, About, FAQ, Privacy, Terms, 404
+- [x] Skeleton loaders, empty and error states, toasts, delete confirmation dialog
+- [ ] **(you)** Test the redesigned site end to end on desktop and phone
 
 ## Post-MVP backlog
 

@@ -74,7 +74,11 @@ Coding style, tools, communication and workflow preferences go here as teammates
 ## Conventions
 
 - **Database:** snake_case tables/columns; schema lives in `supabase/schema.sql`; every schema change goes in that file.
-- **Folders:** HTML pages at the repo root (`index.html`, `login.html`, `register.html`, `reset.html`, `sell.html` (also edit mode via `?id=`), `product.html`, `my-listings.html`); `src/lib/supabase.js` (client + shared helpers); `src/styles/main.css`; `supabase/schema.sql`. Each page has one inline `<script type="module">`.
+- **Pages (repo root):** `index.html` (public landing), `login.html`, `register.html`, `reset.html`, `marketplace.html`, `product.html`, `sell.html` (edit mode via `?id=`), `dashboard.html` (my listings, stats), `profile.html`, `how-it-works.html`, `about.html`, `faq.html`, `privacy.html`, `terms.html`, `404.html` (served by Cloudflare for missing URLs).
+- **Shared code:** `src/lib/supabase.js` (client, `requireUser`, `nextPage`, `showMessage`, `busy`), `src/lib/layout.js` (header/footer injected into `#site-header`/`#site-footer`, `productCard`, `skeletonCards`, `stateBlock`, `icon`, formatters), `src/styles/main.css` (the design system), `src/icons.svg` (Lucide subset; add a symbol there before using a new icon).
+- **Paths:** root-absolute (`/src/...`, `/marketplace.html`) in shared code and 404 so they work at any URL.
+- **Design system:** tokens at the top of `main.css` (teal `--brand`, sunflower `--accent`, warm neutrals, Plus Jakarta Sans). Use existing classes (`.btn .btn-primary/.btn-secondary/...`, `.input`, `.select`, `.card`, `.badge-*`, `.state`, `.pcard`) — don't style pages one-off.
+- **Honesty rule:** UI copy must match real features. No wishlist, location, in-app chat, payments or Google login exist — don't show them. Listings are visible only to signed-in students (RLS), so the landing page shows a sign-in prompt instead of listings when logged out.
 - **Config:** Supabase URL + anon key live in `src/lib/supabase.js` (public-safe). No env vars in the frontend. GitHub Actions uses secrets `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
 - **Roll numbers:** regex `^[0-9]{4}(CSE|CSDS|CSAI|CSIT)[0-9]{3}$`, enforced in the DB (`allowed_students`) and in `src/lib/supabase.js` (`ROLL_NO_PATTERN`). New course → update both.
 - **Git:** repo at https://github.com/nitesh785/P2P_Campus_marketplace, default branch `main`. Branching and review rules are TBD by the team.
@@ -88,7 +92,7 @@ Coding style, tools, communication and workflow preferences go here as teammates
 
 ## Current status
 
-- **Phase:** 7, deployment (see TODO.md). All 11 MVP features built and tested.
+- **Phase:** 8, UI/UX redesign done (2026-09-26): landing page, auth split screens, design system, dashboard, profile, content pages, 404. All MVP features kept.
 - **Done:** README rewritten for zero cost; PRD.md and TODO.md created; database chosen.
 - **Done:** Git repo pushed to GitHub (`main`).
 - **Done:** `schema.sql` run in Supabase (project `icphsbadppjnztfxxuui`); URL + publishable key in `src/lib/supabase.js`; register, login, forgot/reset password, logout and a guarded home page built.
@@ -97,12 +101,16 @@ Coding style, tools, communication and workflow preferences go here as teammates
 - **Done:** Phase 3 tested by owner (sell + view photos works).
 - **Done:** Phase 4 code: marketplace grid on `index.html`, prefix full-text search (`calc` finds calculator), category/condition/price filters, 20 per page + Load more.
 - **Done:** Phase 4 tested by owner (second user sees item, WhatsApp contact works).
-- **Done:** Phase 5 code: `my-listings.html` (edit, mark sold/available, delete with photo cleanup), edit mode in `sell.html`.
+- **Done:** Phase 5 code: `my-listings.html` (now replaced by `dashboard.html`) (edit, mark sold/available, delete with photo cleanup), edit mode in `sell.html`.
 - **Done:** Phase 5 tested by owner; Phase 6 API security checks passed (logged-out reads/writes blocked, no secrets in repo); keep-alive workflow added.
 - **Not done yet:** Cloudflare Pages deployment; mobile/keyboard check; demo data.
-- **Next step:** owner connects Cloudflare Pages and updates Supabase Auth URLs to the live URL.
+- **Next step:** owner tests the redesigned site end to end on the live URL (desktop + phone).
 
 ## Gotchas (setup lessons)
+
+- **`form.name` / `form.title`:** these return the form's own attributes, not inputs. Always use `form.elements.name`.
+- **Headless Chrome screenshots:** virtual time doesn't advance CSS transitions, so menus/modals look half-faded in screenshots. Not a bug; check with `el.getAnimations()` (should be `running`).
+- **Visual testing:** copy the site to a scratch folder, swap `src/lib/supabase.js` for a mock with sample data, serve with `python -m http.server`, screenshot with headless Chrome (phones via 390 px iframes).
 
 - **Brevo `525 5.7.1 Unauthorized IP address`:** turn off Brevo → Security → Authorised IPs → "Block unknown IP addresses". Supabase sends from changing IPs, so allowlisting one IP doesn't work.
 - **Failed sign-up leaves an unconfirmed user:** delete it in Supabase → Authentication → Users to free the roll number.
@@ -126,3 +134,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-26 | Phase 5: My Listings page, edit mode on sell page |
 | 2026-09-26 | Phase 6 security checks passed; keep-alive GitHub Action added |
 | 2026-09-26 | Site deployed on Cloudflare Pages; mobile layout fixed (full-bleed pages, 2-column grid, wrapping header, filter overflow, 44 px tap targets) |
+| 2026-09-26 | Full UI/UX redesign: design system, landing page (new home), marketplace moved to marketplace.html, dashboard replaces my-listings, profile, how-it-works/about/FAQ/privacy/terms/404, login returns to the requested page |
