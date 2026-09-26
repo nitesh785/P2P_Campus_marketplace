@@ -119,6 +119,12 @@ Tick items as you finish them (`- [x]`). Items marked **(you)** need the project
 - [x] Cloudflare Web Analytics beacon added to all pages
 - [ ] **(you)** Test chat between two accounts, a report, and the admin page
 
+## Phase 11: WhatsApp privacy
+
+- [x] Opt-in "Show my WhatsApp number" (profile + sign-up); numbers hidden at database level
+- [x] Wanted board: "I have this" opens an in-app chat
+- [ ] **(you)** Run `supabase/migrations/2026-09-27-2-whatsapp-privacy.sql`
+
 ## Post-MVP backlog
 
 - [ ] Auto-delete sold listings older than 60 days

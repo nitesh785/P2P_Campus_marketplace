@@ -147,7 +147,7 @@
   import { supabase, requireUser, showMessage } from '/src/lib/supabase.js';
   import {
     productCard, stateBlock, initials, formatPrice, formatDate, imageUrl, icon, categoryIcon,
-    isExpired, nowIso, whatsappLink, rememberViewed, savedIds, saveButton, stars, REPORT_REASONS, meReady,
+    isExpired, nowIso, whatsappLink, whatsappNumbers, rememberViewed, savedIds, saveButton, stars, REPORT_REASONS, meReady,
   } from '/src/lib/layout.js';
 
   const user = await requireUser();
@@ -155,7 +155,7 @@
   const $ = (elId) => document.getElementById(elId);
 
   const [{ data: p, error }, saved] = await Promise.all([
-    supabase.from('products').select('*, categories(name), profiles:profiles!products_seller_id_fkey(name, phone)').eq('id', id ?? '').maybeSingle(),
+    supabase.from('products').select('*, categories(name), profiles:profiles!products_seller_id_fkey(name)').eq('id', id ?? '').maybeSingle(),
     savedIds(),
   ]);
 
@@ -209,7 +209,14 @@
     $('unavailable').textContent = sold ? 'This item has been sold.' : 'This listing has expired and is no longer on the marketplace.';
     $('report-open').hidden = mine;
 
-    $('whatsapp').href = whatsappLink(p.profiles.phone, `Hi, is "${p.title}" still available? (Campus Marketplace)`);
+    // WhatsApp only for sellers who chose to share their number; everyone else is reachable in Messages.
+    $('whatsapp').hidden = true;
+    whatsappNumbers([p.seller_id]).then((numbers) => {
+      const phone = numbers.get(p.seller_id);
+      if (!phone || mine) return;
+      $('whatsapp').href = whatsappLink(phone, `Hi, is "${p.title}" still available? (Campus Marketplace)`);
+      $('whatsapp').hidden = false;
+    });
     if (!mine) $('save-slot').replaceWith(saveButton(p.id, saved, {
       onChange: (on) => showMessage(on ? 'Saved. Find it in your dashboard.' : 'Removed from saved.', true),
     }));

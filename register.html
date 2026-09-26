@@ -68,8 +68,12 @@
             </label>
           </div>
           <label class="check">
+            <input name="show_whatsapp" type="checkbox">
+            <span>Show my WhatsApp number to signed-in students so they can contact me there (optional, you can change this later)</span>
+          </label>
+          <label class="check">
             <input name="consent" type="checkbox" required>
-            <span>I agree that signed-in students can see my name and WhatsApp number on my listings. See the <a href="privacy.html">Privacy Policy</a>.</span>
+            <span>I agree that signed-in students can see my name on my listings. See the <a href="privacy.html">Privacy Policy</a>.</span>
           </label>
           <button type="submit" class="btn btn-primary btn-lg btn-block">Create account</button>
         </form>
@@ -105,7 +109,7 @@
         email: f.email.trim(),
         password: f.password,
         options: {
-          data: { roll_no, name: f.name.trim(), phone: f.phone.trim() },
+          data: { roll_no, name: f.name.trim(), phone: f.phone.trim(), show_whatsapp: f.show_whatsapp === 'on' },
           emailRedirectTo: pageUrl('login.html'),
         },
       }));

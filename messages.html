@@ -92,6 +92,7 @@
 
   const role = (c) => (c.buyer_id === user.id ? 'buyer' : 'seller');
   const other = (c) => (role(c) === 'buyer' ? c.seller : c.buyer);
+  const isWanted = (c) => Boolean(c.wanted_id) || c.product_title.startsWith('Wanted: ');
   const unread = (c) => c.last_message_at > c[`${role(c)}_last_read_at`];
 
   function timeLabel(iso) {
@@ -103,7 +104,7 @@
 
   async function loadConversations() {
     const { data, error } = await supabase.from('conversations')
-      .select(`id, product_id, product_title, buyer_id, seller_id, last_message_at, buyer_last_read_at, seller_last_read_at,
+      .select(`id, product_id, wanted_id, product_title, buyer_id, seller_id, last_message_at, buyer_last_read_at, seller_last_read_at,
                buyer:profiles!conversations_buyer_id_fkey(name), seller:profiles!conversations_seller_id_fkey(name),
                products(image_paths)`)
       .order('last_message_at', { ascending: false });
@@ -133,7 +134,9 @@
       if (c.products?.image_paths?.[0]) img.src = imageUrl(c.products.image_paths[0]);
       else img.hidden = true;
       li.querySelector('strong').textContent = other(c)?.name ?? 'Student';
-      li.querySelector('.conv-product').textContent = `${role(c) === 'buyer' ? 'You asked about' : 'Asking about'} ${c.product_title}`;
+      li.querySelector('.conv-product').textContent = isWanted(c)
+        ? `${role(c) === 'buyer' ? 'You replied to' : 'About your request:'} ${c.product_title.replace(/^Wanted: /, '')}`
+        : `${role(c) === 'buyer' ? 'You asked about' : 'Asking about'} ${c.product_title}`;
       li.querySelector('time').textContent = timeLabel(c.last_message_at);
       li.querySelector('.unread-dot').hidden = !unread(c);
       a.addEventListener('click', (e) => { e.preventDefault(); open(c.id, true); });
@@ -165,7 +168,8 @@
     $('t-avatar').textContent = initials(person);
     $('t-name').textContent = person;
     $('t-product').textContent = current.product_title;
-    if (current.product_id) $('t-product').href = `product.html?id=${current.product_id}`;
+    if (isWanted(current)) $('t-product').href = 'wanted.html';
+    else if (current.product_id) $('t-product').href = `product.html?id=${current.product_id}`;
     else $('t-product').removeAttribute('href');
 
     shown.clear();
@@ -192,7 +196,7 @@
   async function updateRateButton(messages) {
     const rate = $('rate');
     rate.hidden = true;
-    if (role(current) !== 'buyer' || !messages.some((m) => m.sender_id === current.seller_id)) return;
+    if (isWanted(current) || role(current) !== 'buyer' || !messages.some((m) => m.sender_id === current.seller_id)) return;
     const { data } = await supabase.from('reviews').select('id').eq('conversation_id', current.id).maybeSingle();
     rate.hidden = Boolean(data);
   }

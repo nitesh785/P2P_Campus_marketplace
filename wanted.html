@@ -58,7 +58,7 @@
       <span class="field-label">Details (optional)</span>
       <textarea class="textarea" name="details" maxlength="500" rows="3" placeholder="Edition, condition you'd accept, when you need it"></textarea>
     </label>
-    <p class="field-hint">Students who have it will contact you on your WhatsApp number.</p>
+    <p class="field-hint">Students who have it will message you in Messages (and on WhatsApp if you've chosen to show your number).</p>
     <div class="modal-actions" style="margin-top: 0">
       <button class="btn btn-secondary" value="cancel" formnovalidate>Cancel</button>
       <button class="btn btn-primary" value="post">Post request</button>
@@ -68,7 +68,7 @@
 
 <script type="module">
   import { supabase, requireUser, showMessage } from '/src/lib/supabase.js';
-  import { icon, categoryIcon, initials, formatDate, formatPrice, whatsappLink, stateBlock, meReady } from '/src/lib/layout.js';
+  import { icon, categoryIcon, initials, formatDate, formatPrice, whatsappLink, whatsappNumbers, stateBlock, meReady } from '/src/lib/layout.js';
 
   const user = await requireUser();
   const $ = (id) => document.getElementById(id);
@@ -76,6 +76,7 @@
   const dialog = $('compose');
   const form = $('compose-form');
   const f = form.elements; // form.title would be the form's own title attribute
+  let phones = new Map(); // posters who chose to show WhatsApp
 
   const { data: categories } = await supabase.from('categories').select('id, name').order('id');
   for (const c of categories ?? []) {
@@ -86,7 +87,7 @@
   async function load() {
     list.setAttribute('aria-busy', 'true');
     let q = supabase.from('wanted_posts')
-      .select('id, user_id, title, details, max_budget, status, created_at, categories(name), profiles:profiles!wanted_posts_user_id_fkey(name, phone)')
+      .select('id, user_id, title, details, max_budget, status, created_at, categories(name), profiles:profiles!wanted_posts_user_id_fkey(name)')
       .order('created_at', { ascending: false }).limit(60);
     if ($('mine').checked) q = q.eq('user_id', user.id);
     else q = q.eq('status', 'open');
@@ -94,6 +95,7 @@
     const { data, error } = await q;
     list.setAttribute('aria-busy', 'false');
     if (error) return list.replaceChildren(stateBlock({ kind: 'error', iconName: 'triangle-alert', title: 'Something went wrong', text: 'We could not load requests.', action: { label: 'Try again', onClick: load } }));
+    phones = await whatsappNumbers(data.filter((w) => w.user_id !== user.id).map((w) => w.user_id));
     list.replaceChildren(...(data.length ? data.map(card) : [stateBlock({
       iconName: 'megaphone', title: $('mine').checked ? "You haven't posted any requests" : 'No requests right now',
       text: 'Need a book, calculator or cycle? Post a request and let sellers find you.',
@@ -151,15 +153,41 @@
       });
       actions.append(del);
     } else if (w.status === 'open') {
-      const have = document.createElement('a');
-      have.className = 'btn btn-whatsapp btn-sm';
-      have.target = '_blank';
-      have.rel = 'noopener';
-      have.innerHTML = `${icon('message-circle')}I have this`;
-      have.href = whatsappLink(w.profiles.phone, `Hi! I saw your request for "${w.title}" on Campus Marketplace. I have one.`);
+      const have = button('btn-primary', 'message-square-text', 'I have this');
+      have.addEventListener('click', () => startChat(w, have));
       actions.append(have);
+      const phone = phones.get(w.user_id);
+      if (phone) {
+        const wa = document.createElement('a');
+        wa.className = 'btn btn-whatsapp btn-sm';
+        wa.target = '_blank';
+        wa.rel = 'noopener';
+        wa.setAttribute('aria-label', `Contact ${w.profiles.name} on WhatsApp`);
+        wa.innerHTML = `${icon('message-circle')}WhatsApp`;
+        wa.href = whatsappLink(phone, `Hi! I saw your request for "${w.title}" on Campus Marketplace. I have one.`);
+        actions.append(wa);
+      }
     }
     return li;
+  }
+
+  // Open (or reuse) an in-app conversation with the student who posted the request.
+  async function startChat(w, btn) {
+    btn.disabled = true;
+    let { data: conv } = await supabase.from('conversations').select('id')
+      .eq('wanted_id', w.id).eq('buyer_id', user.id).maybeSingle();
+    if (!conv) {
+      const { data, error } = await supabase.from('conversations')
+        .insert({ wanted_id: w.id, product_title: `Wanted: ${w.title}`.slice(0, 100), seller_id: w.user_id })
+        .select('id').single();
+      if (error) {
+        btn.disabled = false;
+        const me = await meReady;
+        return showMessage(me?.blocked ? 'Your account is blocked, so you cannot send messages.' : error.message);
+      }
+      conv = data;
+    }
+    location.href = `messages.html?c=${conv.id}`;
   }
 
   function button(variant, iconName, label) {

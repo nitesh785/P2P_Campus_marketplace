@@ -44,7 +44,11 @@
               <input class="input" name="phone" type="tel" required pattern="[0-9]{10,13}" inputmode="numeric" autocomplete="tel">
             </label>
           </div>
-          <p class="field-hint">Signed-in students see your name and WhatsApp number on your listings. Your email and roll number can't be changed here.</p>
+          <label class="check">
+            <input type="checkbox" name="show_whatsapp">
+            <span><strong>Show my WhatsApp number</strong> to signed-in students, so they can contact me on WhatsApp about my listings and requests. When this is off, your number stays private and students can only message you in the app.</span>
+          </label>
+          <p class="field-hint">Your email and roll number can't be changed here.</p>
           <div><button type="submit" class="btn btn-primary">Save changes</button></div>
         </form>
       </section>
@@ -74,7 +78,7 @@
 
 <script type="module">
   import { supabase, requireUser, showMessage, busy } from '/src/lib/supabase.js';
-  import { initials, formatDate } from '/src/lib/layout.js';
+  import { initials, formatDate, whatsappNumbers } from '/src/lib/layout.js';
 
   const user = await requireUser();
   const $ = (id) => document.getElementById(id);
@@ -83,15 +87,17 @@
   const pf = profileForm.elements; // profileForm.name would be the form's own name attribute
   const pw = passwordForm.elements;
 
-  const [{ data: me }, { count }] = await Promise.all([
-    supabase.from('profiles').select('name, phone, roll_no, created_at').eq('id', user.id).single(),
+  const [{ data: me }, { count }, numbers] = await Promise.all([
+    supabase.from('profiles').select('name, roll_no, created_at, show_whatsapp').eq('id', user.id).single(),
     supabase.from('products').select('id', { count: 'exact', head: true }).eq('seller_id', user.id),
+    whatsappNumbers([user.id]), // your own number is always returned to you
   ]);
+  if (me) me.phone = numbers.get(user.id) ?? '';
 
   function renderCard() {
     $('avatar').textContent = initials(me.name);
     $('name').textContent = me.name;
-    $('phone').textContent = me.phone;
+    $('phone').textContent = `${me.phone} · ${me.show_whatsapp ? 'shown on WhatsApp' : 'private'}`;
   }
 
   if (me) {
@@ -102,12 +108,13 @@
     $('count').textContent = `${count ?? 0} ${count === 1 ? 'listing' : 'listings'}`;
     pf.name.value = me.name;
     pf.phone.value = me.phone;
+    pf.show_whatsapp.checked = me.show_whatsapp;
   }
 
   profileForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!profileForm.reportValidity()) return;
-    const changes = { name: pf.name.value.trim(), phone: pf.phone.value.trim() };
+    const changes = { name: pf.name.value.trim(), phone: pf.phone.value.trim(), show_whatsapp: pf.show_whatsapp.checked };
     const { error } = await busy(profileForm.querySelector('button'), 'Saving…', () =>
       supabase.from('profiles').update(changes).eq('id', user.id));
     if (error) return showMessage(error.message);

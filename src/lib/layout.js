@@ -56,6 +56,13 @@ export function whatsappLink(phone, text) {
   return `https://wa.me/${full}?text=${encodeURIComponent(text)}`;
 }
 
+// Phone numbers of students who chose to show WhatsApp (plus your own). Map of id → phone.
+export async function whatsappNumbers(ids) {
+  if (!ids.length) return new Map();
+  const { data } = await supabase.rpc('whatsapp_numbers', { ids: [...new Set(ids)] });
+  return new Map((data ?? []).map((r) => [r.id, r.phone]));
+}
+
 // ---------- Recently viewed (this browser only, no database use) ----------
 
 const RECENT_KEY = 'cm-recent';

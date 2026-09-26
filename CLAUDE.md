@@ -30,7 +30,7 @@ College-only web marketplace where verified students buy and sell second-hand it
 | Emails | Brevo free SMTP (fallback: Resend or Gmail SMTP) |
 | Hosting | Cloudflare Pages |
 | Keep-alive | `.github/workflows/keep-alive.yml`, twice a week (Supabase pauses after 7 idle days) |
-| Contact | In-app chat (`messages.html`, Supabase Realtime) plus WhatsApp `wa.me` links |
+| Contact | In-app chat (`messages.html`, Supabase Realtime); WhatsApp `wa.me` links only for students who opted in |
 | Frontend | Plain HTML/CSS/JS, no build step; libraries (supabase-js, browser-image-compression) from the jsDelivr CDN |
 | Student verification | Roll-number allowlist (`allowed_students` table, CSV import); any email allowed; one account per roll number |
 | Admin tools | `admin.html` (reports, block/unblock, remove listings) for profiles with `is_admin = true`; roll list still in the Supabase dashboard |
@@ -52,6 +52,7 @@ College-only web marketplace where verified students buy and sell second-hand it
 | 2026-09-27 | Build every free-tier feature from suggestion.md except email alerts | Owner |
 | 2026-09-27 | Listings expire 60 days after posting/renewal via an `expires_at` column filtered in queries (no cron job) | Claude |
 | 2026-09-27 | Only a buyer the seller replied to in Messages can rate that seller, once per conversation | Claude |
+| 2026-09-27 | WhatsApp numbers are private by default (opt-in `show_whatsapp`); only `whatsapp_numbers()` can return a number. "I have this" on Wanted opens an in-app chat | Owner |
 | 2026-09-27 | Admins are set by SQL (`update profiles set is_admin = true ...`); users can never change `is_admin`/`blocked` | Claude |
 
 ## Open questions (move to Decisions when answered)
@@ -119,6 +120,8 @@ Coding style, tools, communication and workflow preferences go here as teammates
 
 ## Gotchas (setup lessons)
 
+- **`profiles.phone` is not selectable** (column grants). Get numbers only through `whatsappNumbers(ids)` in `layout.js` (RPC `whatsapp_numbers`), which returns opted-in students and yourself. Never add `phone` to a select.
+
 - **Always name the join when embedding `profiles`:** `profiles:profiles!products_seller_id_fkey(name)`, not `profiles(name)`. Any new table linking two tables (like `saved_items`) makes a plain embed ambiguous and breaks every page that uses it ("more than one relationship was found").
 - **After every schema change run `python tools/check_queries.py`** before pushing. It tests every page's query against the live database.
 
@@ -162,3 +165,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-27 | Feature migration run in Supabase and verified; feature batch pushed. Analytics mention removed from privacy.html until enabled |
 | 2026-09-27 | Cloudflare Web Analytics enabled (beacon on all pages), privacy.html updated |
 | 2026-09-27 | Fixed ambiguous products→profiles joins after saved_items was added (broke admin and listing pages); added tools/check_queries.py |
+| 2026-09-27 | WhatsApp privacy: opt-in switch (profile + sign-up), numbers hidden via column grants + RPC, Wanted chats in Messages |

@@ -624,7 +624,7 @@ cd campus-marketplace
 ### Supabase setup checklist
 
 1. Create a new project (free plan) in the region closest to your college (e.g. *Mumbai / ap-south-1*).
-2. **SQL Editor**: run `supabase/schema.sql`, then every file in `supabase/migrations/` in date order.
+2. **SQL Editor**: run `supabase/schema.sql`, then every file in `supabase/migrations/` in name order.
    To make someone an admin: `update public.profiles set is_admin = true where roll_no = '2026CSE102';`
 3. **Storage**: create a **public** bucket `product-images` with a 1 MB file-size limit and allowed types `image/webp, image/jpeg, image/png`.
 4. **Authentication → Providers → Email**: enable *Confirm email*.
