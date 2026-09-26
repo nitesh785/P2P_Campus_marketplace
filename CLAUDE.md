@@ -114,7 +114,7 @@ Coding style, tools, communication and workflow preferences go here as teammates
 - **Done:** Phase 5 code: `my-listings.html` (now replaced by `dashboard.html`) (edit, mark sold/available, delete with photo cleanup), edit mode in `sell.html`.
 - **Done:** Phase 5 tested by owner; Phase 6 API security checks passed (logged-out reads/writes blocked, no secrets in repo); keep-alive workflow added.
 - **Not done yet:** Cloudflare Pages deployment; mobile/keyboard check; demo data.
-- **Next step:** owner runs `supabase/migrations/2026-09-27-features.sql`, makes the team admins, enables Cloudflare Web Analytics; then Claude pushes the feature batch.
+- **Next step:** owner makes team admins and tests chat, reports and the admin page on the live site. Analytics not enabled (optional: Cloudflare → Analytics & Logs → Web Analytics → Add a site gives a beacon token; add its script tag to pages and mention it in privacy.html).
 
 ## Gotchas (setup lessons)
 
@@ -155,3 +155,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-27 | Added listing quantity (DB column via migration, sell form, cards, product page, dashboard "Sold one") |
 | 2026-09-27 | Added suggestion.md (free-tier feature ideas, recommended next 3) |
 | 2026-09-27 | Feature batch: saved items, reports + admin page, pickup location, negotiable/free filter, 60-day expiry + renew, wanted board, seller profiles, in-app chat, seller ratings, share, recently viewed, typo-tolerant search, installable app, dark mode |
+| 2026-09-27 | Feature migration run in Supabase and verified; feature batch pushed. Analytics mention removed from privacy.html until enabled |

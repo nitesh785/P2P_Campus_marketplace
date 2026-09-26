@@ -114,9 +114,9 @@ Tick items as you finish them (`- [x]`). Items marked **(you)** need the project
 - [x] In-app chat (Messages) with unread badge; seller ratings after a chat
 - [x] Listings expire after 60 days; Renew on the dashboard
 - [x] Installable app (manifest, icons, offline page), dark mode
-- [ ] **(you)** Run `supabase/migrations/2026-09-27-features.sql` in Supabase
+- [x] **(you)** Run `supabase/migrations/2026-09-27-features.sql` in Supabase
 - [ ] **(you)** Make team members admins (SQL in the handover message / README)
-- [ ] **(you)** Turn on Cloudflare Web Analytics for the Pages project
+- [ ] **(optional)** Cloudflare Web Analytics: needs a site token added to the pages (see CLAUDE.md); add a line to privacy.html when enabled
 - [ ] **(you)** Test chat between two accounts, a report, and the admin page
 
 ## Post-MVP backlog
