@@ -79,9 +79,16 @@ Coding style, tools, communication and workflow preferences go here as teammates
 - **Roll numbers:** regex `^[0-9]{4}(CSE|CSDS|CSAI|CSIT)[0-9]{3}$`, enforced in the DB (`allowed_students`) and in `src/lib/supabase.js` (`ROLL_NO_PATTERN`). New course → update both.
 - **Git:** repo at https://github.com/nitesh785/P2P_Campus_marketplace, default branch `main`. Branching and review rules are TBD by the team.
 
+## Deploying
+
+- **Automatic:** every push to `main` deploys to Cloudflare Pages (~1 min). Routine: `git pull` → commit → `git push`.
+- **Check / undo:** Cloudflare → Workers & Pages → project → Deployments (status, Rollback).
+- **Preview:** push any other branch to get a separate preview URL; merge to `main` to go live.
+- **Database changes are manual:** new SQL in `supabase/schema.sql` must also be run in the Supabase SQL Editor.
+
 ## Current status
 
-- **Phase:** 2, authentication (see TODO.md).
+- **Phase:** 7, deployment (see TODO.md). All 11 MVP features built and tested.
 - **Done:** README rewritten for zero cost; PRD.md and TODO.md created; database chosen.
 - **Done:** Git repo pushed to GitHub (`main`).
 - **Done:** `schema.sql` run in Supabase (project `icphsbadppjnztfxxuui`); URL + publishable key in `src/lib/supabase.js`; register, login, forgot/reset password, logout and a guarded home page built.
