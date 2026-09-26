@@ -57,7 +57,7 @@ This project must cost **nothing** to build, host, and run. Every technical deci
 | ---- | ------------------------- |
 | **No credit card** | No service may require a billing account or card on file, even if its usage would be "free". |
 | **Free tier only** | Every service is used within its permanent free tier, not a time-limited trial. |
-| **Open-source tooling** | Editors, libraries, and frameworks are free and open source (VS Code, Git, Vite, etc.). |
+| **Open-source tooling** | Editors and libraries are free and open source (VS Code, Git, supabase-js, etc.). |
 | **No paid domain** | We use the free subdomain from the hosting provider (e.g. `campus-market.pages.dev`). |
 | **No transaction fees** | Payments happen offline (cash/UPI between students), not through the app. |
 | **Graceful limits** | The app compresses images, paginates queries, and cleans up old data so it stays inside free quotas. |
@@ -84,7 +84,7 @@ We therefore need a **college-restricted digital marketplace** that organises st
 
 ## 🎯 Objectives
 
-* College-restricted registration and login (only `@<college-domain>` emails).
+* College-restricted registration: only roll numbers on the official student list can sign up.
 * Create, edit, and delete product listings with 1–3 images.
 * Browse listings, search them by keyword, and filter by category, price, and condition.
 * Mark listings as sold.
@@ -117,7 +117,7 @@ Manage users, review reported listings, remove inappropriate content, block user
 
 | Module | Features |
 | ------ | -------- |
-| **Authentication** | Register, email verification, login, logout, forgot password, college-domain restriction |
+| **Authentication** | Register, email verification, login, logout, forgot password, roll-number allowlist |
 | **Listings** | Title, description, price, category, condition, 1–3 images, seller, status, date posted |
 | **Marketplace** | Browse, keyword search, filter by category / price / condition, product details |
 | **My Listings** | View, edit, delete, mark as sold |
@@ -146,7 +146,7 @@ Meet on campus & pay (cash / UPI)       Mark Product as Sold
 
 | Layer | Technology | Free-tier allowance | Credit card? |
 | ----- | ---------- | ------------------- | ------------ |
-| **Frontend** | HTML5, CSS3, JavaScript (Vanilla JS or React + Vite) | Open source | ❌ No |
+| **Frontend** | HTML5, CSS3, plain JavaScript (no build step; libraries from the jsDelivr CDN) | Open source | ❌ No |
 | **Styling** (optional) | Tailwind CSS / Pico.css | Open source | ❌ No |
 | **Database** | **Supabase PostgreSQL** | 500 MB database | ❌ No |
 | **Authentication** | **Supabase Auth** | 50,000 monthly active users | ❌ No |
@@ -216,7 +216,7 @@ Supabase is the best fit for a zero-cost student project because it provides **d
           ▼                     ▼                     ▼
  ┌─────────────────┐  ┌───────────────────┐  ┌─────────────────┐
  │  Supabase Auth  │  │ Supabase Postgres │  │ Supabase Storage│
- │ (college email) │  │  profiles,        │  │ product-images  │
+ │ (roll-no check) │  │  profiles,        │  │ product-images  │
  │                 │  │  products,        │  │ bucket          │
  │  Brevo SMTP ────┤  │  categories + RLS │  │ (compressed)    │
  └─────────────────┘  └─────────┬─────────┘  └─────────────────┘
@@ -260,9 +260,18 @@ Run this in **Supabase → SQL Editor**:
 -- Enable fuzzy search
 create extension if not exists pg_trgm;
 
--- 1. Profiles (one row per registered student)
+-- 0. Official student list (roll numbers), uploaded by admins as CSV
+--    in Supabase → Table Editor → allowed_students → Import data from CSV
+create table public.allowed_students (
+  roll_no     text primary key check (roll_no = upper(roll_no)),  -- store in UPPERCASE
+  full_name   text,
+  claimed_by  uuid unique references auth.users(id) on delete set null
+);
+
+-- 1. Profiles (one row per registered student, created by the sign-up trigger)
 create table public.profiles (
   id          uuid primary key references auth.users(id) on delete cascade,
+  roll_no     text not null unique references public.allowed_students(roll_no),
   name        text not null check (char_length(name) between 2 and 60),
   email       text not null unique,
   phone       text not null check (phone ~ '^[0-9]{10,13}$'),
@@ -354,25 +363,49 @@ const { data, error } = await q;
 
 ## 🔐 Security
 
-### 1. College-email restriction (enforced in the database, not only in the UI)
+### 1. Roll-number allowlist (enforced in the database, not only in the UI)
+
+The college doesn't give students an official email domain, so a student is verified by **roll number** instead. Admins upload the official roll-number list into `allowed_students`. Sign-up succeeds only if the roll number is on the list and hasn't already been used. Students can register with any email address.
 
 ```sql
--- Reject sign-ups from any domain other than the college's
-create or replace function public.enforce_college_domain()
-returns trigger language plpgsql security definer as $$
+alter table public.allowed_students enable row level security;
+-- No policies on purpose: app users can't read the list. Admins manage it in the Supabase dashboard.
+
+-- On sign-up: claim the roll number and create the profile, or reject the whole sign-up
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  meta jsonb := new.raw_user_meta_data;
+  roll text  := upper(trim(meta->>'roll_no'));
 begin
-  if new.email !~* '@yourcollege\.edu\.in$' then
-    raise exception 'Only college email addresses are allowed';
+  update allowed_students set claimed_by = new.id
+   where roll_no = roll and claimed_by is null;
+  if not found then
+    raise exception 'Roll number is not on the student list or is already registered';
   end if;
+
+  insert into profiles (id, roll_no, name, email, phone)
+  values (new.id, roll, meta->>'name', new.email, meta->>'phone');
   return new;
 end $$;
 
-create trigger check_college_domain
-  before insert on auth.users
-  for each row execute function public.enforce_college_domain();
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
 ```
 
-Also enable **"Confirm email"** in *Authentication → Providers → Email* so that only students who can open the college inbox can log in.
+The frontend passes the details as sign-up metadata:
+
+```js
+await supabase.auth.signUp({
+  email, password,
+  options: { data: { roll_no, name, phone } }
+});
+```
+
+* Enable **"Confirm email"** in *Authentication → Providers → Email* so every account has a working email for password resets.
+* Supabase shows trigger errors to the client as a generic "Database error saving new user". The sign-up form should show a friendly message such as "Roll number not found or already registered."
+* **Known weakness:** anyone who knows a classmate's roll number could register as them. If a student reports "my roll number is already taken", an admin deletes the fake user in *Authentication → Users*, which frees the roll number automatically (`on delete set null`). The student can then register.
 
 ### 2. Row Level Security (ownership rules)
 
@@ -385,12 +418,13 @@ alter table public.categories enable row level security;
 create policy "read categories" on public.categories
   for select to authenticated using (true);
 
--- Profiles: logged-in students can read; users manage only their own row
+-- Profiles: logged-in students can read; the sign-up trigger creates rows;
+-- users may edit only their own name and phone (never roll_no or email)
 create policy "read profiles"   on public.profiles for select to authenticated using (true);
-create policy "insert own profile" on public.profiles for insert to authenticated
-  with check (id = auth.uid());
 create policy "update own profile" on public.profiles for update to authenticated
   using (id = auth.uid());
+revoke update on public.profiles from authenticated;
+grant  update (name, phone) on public.profiles to authenticated;
 
 -- Products: logged-in students can read; only the seller can write
 create policy "read products"   on public.products for select to authenticated using (true);
@@ -435,7 +469,7 @@ create policy "delete own images" on storage.objects for delete to authenticated
 
 | ID | Requirement | Details |
 | -- | ----------- | ------- |
-| **FR-01** | User Registration | Name, college email, phone, password. Rejects non-college domains. Sends a verification email. |
+| **FR-01** | User Registration | Roll number, name, any email, phone, password. Rejects roll numbers not on the student list or already registered. Sends a verification email. |
 | **FR-02** | Authentication | Login, logout, forgot password, persistent session (Supabase Auth). |
 | **FR-03** | Create Listing | Title, description, price, category, condition, 1–3 images. |
 | **FR-04** | Image Upload | 1–3 images, **compressed in the browser to WebP ≤ 200 KB** before upload, stored in Supabase Storage. |
@@ -471,7 +505,7 @@ create policy "delete own images" on storage.objects for delete to authenticated
 
 **2. Login**
 ```text
-College Email
+Email
 Password
 [ Login ]
 Forgot Password? · Register
@@ -480,7 +514,8 @@ Forgot Password? · Register
 **3. Register**
 ```text
 Name
-College Email   (must end with @yourcollege.edu.in)
+Roll Number     (must be on the student list)
+Email           (any email you can access)
 Phone Number    (WhatsApp)
 Password / Confirm Password
 [ Create Account ]  → "Check your college inbox to verify"
@@ -565,7 +600,6 @@ jobs:
 ### Prerequisites (all free)
 
 * [Git](https://git-scm.com/) and a [GitHub](https://github.com/) account
-* [Node.js LTS](https://nodejs.org/) (only needed if you use Vite/React)
 * [VS Code](https://code.visualstudio.com/) with the *Live Server* extension (for plain HTML/JS)
 * A free [Supabase](https://supabase.com/) account (sign in with GitHub, no card)
 * A free [Brevo](https://www.brevo.com/) account for SMTP
@@ -577,26 +611,21 @@ jobs:
 git clone https://github.com/<your-username>/campus-marketplace.git
 cd campus-marketplace
 
-# 2. Create your environment file from the template
-cp .env.example .env
-#    Fill in:
-#    VITE_SUPABASE_URL=https://<project-ref>.supabase.co
-#    VITE_SUPABASE_ANON_KEY=<anon-public-key>
-#    VITE_COLLEGE_DOMAIN=yourcollege.edu.in
+# 2. Put your Supabase project URL and anon (public) key in src/lib/supabase.js
+#    (Supabase → Project Settings → API). The anon key is safe in frontend code.
 
-# 3. Install & run (Vite version)
-npm install
-npm run dev
+# 3. Open index.html with VS Code "Live Server" (right-click → Open with Live Server)
 ```
 
 ### Supabase setup checklist
 
 1. Create a new project (free plan) in the region closest to your college (e.g. *Mumbai / ap-south-1*).
-2. **SQL Editor**: run the schema, RLS, domain trigger, and storage policies from this README.
+2. **SQL Editor**: run the schema, RLS, roll-number sign-up trigger, and storage policies from this README.
 3. **Storage**: create a **public** bucket `product-images` with a 1 MB file-size limit and allowed types `image/webp, image/jpeg, image/png`.
 4. **Authentication → Providers → Email**: enable *Confirm email*.
 5. **Authentication → SMTP Settings**: enter your Brevo SMTP credentials.
 6. **Authentication → URL Configuration**: set the Site URL to your deployed Pages URL.
+7. **Table Editor → allowed_students**: import the student list CSV (columns `roll_no`, `full_name`; roll numbers in UPPERCASE).
 
 ### Suggested folder structure
 
@@ -604,14 +633,13 @@ npm run dev
 campus-marketplace/
 ├── index.html
 ├── src/
-│   ├── lib/supabase.js        # createClient(url, anonKey)
+│   ├── lib/supabase.js        # createClient(url, anonKey), supabase-js from CDN
 │   ├── pages/                 # login, register, market, product, create, my-listings
 │   ├── components/            # ProductCard, Filters, ImageUploader
 │   └── styles/
 ├── supabase/
 │   └── schema.sql             # all SQL from this README
 ├── .github/workflows/keep-alive.yml
-├── .env.example
 ├── .gitignore                 # includes .env
 └── README.md
 ```
@@ -624,9 +652,8 @@ campus-marketplace/
 
 1. Push the repository to GitHub.
 2. In Cloudflare → *Workers & Pages → Create → Pages → Connect to Git*, pick the repo.
-3. Build command: `npm run build` · Output directory: `dist` (for plain HTML, leave the build command empty and set the output to `/`).
-4. Add the `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and `VITE_COLLEGE_DOMAIN` environment variables.
-5. The site goes live at `https://campus-marketplace.pages.dev`, free with HTTPS.
+3. Leave the build command empty and set the output directory to `/`.
+4. The site goes live at `https://campus-marketplace.pages.dev`, free with HTTPS.
 
 *GitHub Pages, Netlify, and Vercel free tiers work equally well.*
 
@@ -638,8 +665,10 @@ campus-marketplace/
 
 | Test Case | Expected Result |
 | --------- | --------------- |
-| Register with a college email | Account created, verification email sent |
-| Register with `@gmail.com` | Rejected by the database trigger |
+| Register with a roll number on the list | Account created, verification email sent |
+| Register with a roll number not on the list | Rejected by the database trigger |
+| Register again with an already-used roll number | Rejected by the database trigger |
+| Try to change own `roll_no` via the API | Denied (column not updatable) |
 | Log in before verifying the email | Rejected |
 | Correct credentials | Login succeeds |
 | Wrong password | Login rejected |
@@ -673,7 +702,7 @@ campus-marketplace/
 | Phase | Tasks |
 | ----- | ----- |
 | **1. Planning** | Requirements, wireframes, SQL schema, create Supabase and GitHub accounts |
-| **2. Authentication** | Supabase Auth, Brevo SMTP, college-domain trigger, register/login/logout/reset |
+| **2. Authentication** | Supabase Auth, Brevo SMTP, roll-number allowlist + trigger, register/login/logout/reset |
 | **3. Product Management** | Create listing, image compression and upload, product details page |
 | **4. Marketplace** | Product grid, pagination, full-text search, filters |
 | **5. Seller Dashboard** | My Listings, edit, delete, mark as sold |
@@ -730,7 +759,7 @@ Real-time in-app chat · Online payments · Delivery/logistics · Auctions · AI
 | **Running Cost** | **₹0** |
 
 ```text
-Frontend       : HTML, CSS, JavaScript (optionally React + Vite)
+Frontend       : HTML, CSS, plain JavaScript (no build step)
 Database       : Supabase PostgreSQL
 Authentication : Supabase Auth (+ Brevo free SMTP)
 Storage        : Supabase Storage (browser-compressed WebP images)

@@ -2,10 +2,10 @@
 
 | Field | Value |
 | --- | --- |
-| Version | v0.1 (Draft, awaiting owner decisions) |
-| Date | 2026-09-25 |
+| Version | v0.2 (Draft) |
+| Date | 2026-09-26 |
 | Project type | Academic, first-year engineering project |
-| Stack | Supabase (Postgres, Auth, Storage) · Cloudflare Pages · Brevo SMTP · WhatsApp links |
+| Stack | Plain HTML/CSS/JS · Supabase (Postgres, Auth, Storage) · Cloudflare Pages · Brevo SMTP · WhatsApp links |
 | Running cost | **₹0 per month** |
 | Related docs | [README.md](README.md) · [TODO.md](TODO.md) |
 
@@ -55,7 +55,7 @@ Every verified student is both a buyer and a seller. An admin role is planned af
 
 | ID | As a... | I want to... | So that... |
 | --- | --- | --- | --- |
-| US-01 | Student | sign up with my college email | only my classmates can see my listings and phone number |
+| US-01 | Student | sign up with my roll number | only my classmates can see my listings and phone number |
 | US-02 | Buyer | search "calculator" and filter by price under ₹600 | I find an affordable item quickly |
 | US-03 | Buyer | see photos, condition and seller name | I can judge the item before contacting anyone |
 | US-04 | Buyer | tap one button to message the seller on WhatsApp | I don't have to copy phone numbers |
@@ -72,7 +72,7 @@ All 11 requirements are in the MVP. P0 items are needed for a demo; P1 items can
 
 | ID | Requirement | Priority | Acceptance criteria |
 | --- | --- | --- | --- |
-| FR-01 | Registration | P0 | Name, college email, phone and password required. Non-college domains are rejected by the database. A verification email arrives within 2 minutes. |
+| FR-01 | Registration | P0 | Roll number, name, any email, phone and password required. The database rejects roll numbers not on the official list or already registered. A verification email arrives within 2 minutes. |
 | FR-02 | Login, logout, reset | P0 | Unverified accounts can't log in. Sessions persist across page reloads. The reset-password email works. |
 | FR-03 | Create listing | P0 | Title 3–100 chars, description up to 1,000, price ₹0–2,00,000, category, condition. Invalid input shows an inline error. |
 | FR-04 | Image upload | P0 | 1–3 images per listing. Each is compressed in the browser to WebP, 1080 px max, 200 KB or less. |
@@ -96,7 +96,7 @@ All 11 requirements are in the MVP. P0 items are needed for a demo; P1 items can
 | --- | --- |
 | Cost | ₹0 per month. No service may require a credit card or billing account. |
 | Security | Row Level Security on every table. Users can only change their own rows and storage folder. The `service_role` key never reaches the browser or Git. |
-| Privacy | Phone numbers and listings are visible only to logged-in, verified students. |
+| Privacy | Phone numbers and listings are visible only to logged-in, verified students. The roll-number list is never readable from the app. |
 | Performance | The marketplace page loads in under 3 s on 4G. Search returns in under 1 s. |
 | Free-tier fit | Images 200 KB or less. Paginated queries. The database stays under 500 MB and storage under 1 GB. |
 | Availability | A keep-alive job prevents Supabase's 7-day inactivity pause. |
@@ -112,7 +112,7 @@ The browser talks directly to Supabase; there is no custom backend server. Row L
 
 | Layer | Service | Free allowance |
 | --- | --- | --- |
-| Frontend | HTML/CSS/JS (or React + Vite) | Open source |
+| Frontend | Plain HTML/CSS/JS, no build step | Open source |
 | Database | Supabase Postgres | 500 MB |
 | Auth | Supabase Auth | 50,000 monthly active users |
 | Image storage | Supabase Storage | 1 GB storage, 5 GB egress/month |
@@ -121,7 +121,7 @@ The browser talks directly to Supabase; there is no custom backend server. Row L
 | Keep-alive | GitHub Actions | Free |
 | Contact | WhatsApp `wa.me` links | Free |
 
-**Data model:** `profiles` (1 per user) → `products` (many per user) → `categories` (11 rows). Images live in the `product-images` bucket at `<user_id>/<product_id>/<n>.webp`; their paths are stored in `products.image_paths`.
+**Data model:** `allowed_students` (official roll-number list) → `profiles` (1 per user) → `products` (many per user) → `categories` (11 rows). Images live in the `product-images` bucket at `<user_id>/<product_id>/<n>.webp`; their paths are stored in `products.image_paths`.
 
 **Capacity:** with 3 images at 200 KB each, about 1,600 listings fit in 1 GB of storage.
 
@@ -134,7 +134,10 @@ The browser talks directly to Supabase; there is no custom backend server. Row L
 | Risk | Impact | Mitigation |
 | --- | --- | --- |
 | Supabase pauses the project after 7 idle days | Site goes down during holidays | GitHub Actions ping twice a week. Restore from the dashboard if it pauses. |
-| College email server blocks or delays Brevo emails | Students can't verify their accounts | Test with real college inboxes in week 1. Fall back to Resend or Gmail SMTP. |
+| No official college email domain | Can't verify students by email | Roll-number allowlist uploaded by admins; one account per roll number. |
+| Someone registers with a classmate's roll number | Real student is locked out | Admin deletes the fake account, which frees the roll number. |
+| Official roll-number list unavailable | Nobody can sign up | Team collects lists from class representatives. |
+| Brevo emails land in spam | Students can't verify | Test with Gmail/Outlook in week 1. Fall back to Resend or Gmail SMTP. |
 | Storage fills up (1 GB) | New uploads fail | Compression, delete images with their listing, auto-remove sold listings after 60 days |
 | Phone numbers exposed | Privacy complaint | Visible only to verified, logged-in students. Consent checkbox at sign-up. |
 | Scam or inappropriate listings | Loss of trust | Report button and admin role early in v1.1. Meanwhile, the team removes listings manually through Supabase. |
@@ -142,9 +145,10 @@ The browser talks directly to Supabase; there is no custom backend server. Row L
 
 ### Open questions for the owner
 
-- [ ] What is the college's email domain (for example `@abc.edu.in`)? Do students all have one?
-- [ ] Is there a separate domain for staff or alumni, and should they be allowed in?
-- [ ] Plain HTML/JS or React + Vite?
+- [x] College email domain: none available, so we verify by roll-number allowlist (decided 2026-09-26).
+- [x] Who can join: students only (decided 2026-09-26).
+- [x] Frontend: plain HTML/CSS/JS (decided 2026-09-26).
+- [ ] Roll-number format, and where the official list comes from
 - [ ] Is college permission needed to run a student marketplace?
 - [ ] What is the demo or submission deadline?
 
@@ -155,7 +159,7 @@ The browser talks directly to Supabase; there is no custom backend server. Row L
 | Phase | Scope | Exit criteria |
 | --- | --- | --- |
 | 1. Setup | Accounts, repo, schema, security policies | Schema and RLS run cleanly in Supabase |
-| 2. Auth | FR-01, FR-02 | A college email registers, verifies and logs in; `@gmail.com` is rejected |
+| 2. Auth | FR-01, FR-02 | A listed roll number registers, verifies and logs in; unlisted or reused roll numbers are rejected |
 | 3. Listings | FR-03, FR-04, FR-08 | A listing with 3 compressed images is created and viewed |
 | 4. Marketplace | FR-05, FR-06, FR-07 | Search and filters return correct results |
 | 5. Dashboard | FR-09, FR-10, FR-11 | Edit, delete, sold and WhatsApp all work |

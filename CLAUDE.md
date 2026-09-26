@@ -30,7 +30,9 @@ College-only web marketplace where verified students buy and sell second-hand it
 | Hosting | Cloudflare Pages |
 | Keep-alive | GitHub Actions cron, twice a week (Supabase pauses after 7 idle days) |
 | Contact | WhatsApp `wa.me` links (no in-app chat in MVP) |
-| Frontend | **TBD**: plain HTML/CSS/JS or React + Vite |
+| Frontend | Plain HTML/CSS/JS, no build step; libraries (supabase-js, browser-image-compression) from the jsDelivr CDN |
+| Student verification | Roll-number allowlist (`allowed_students` table, CSV import); any email allowed; one account per roll number |
+| Admin tools (MVP) | Supabase dashboard (Table Editor, Auth → Users); no in-app admin page yet |
 
 ## Decisions
 
@@ -39,11 +41,15 @@ College-only web marketplace where verified students buy and sell second-hand it
 | 2026-09-25 | Supabase over Firebase (free storage, full-text search, SQL for DBMS learning) | Owner + Claude |
 | 2026-09-25 | Payments happen offline (cash/UPI between students); no payment gateway | Owner + Claude |
 | 2026-09-25 | Project docs are kept as files in this folder, not as online docs | Owner |
+| 2026-09-26 | College gives no email domain, so students are verified by a roll-number allowlist | Owner |
+| 2026-09-26 | Frontend is plain HTML/CSS/JS (no React, no build step) | Owner |
+| 2026-09-26 | Only students may join (no staff/alumni) | Owner |
+| 2026-09-26 | Team members are the admins; they use the Supabase dashboard | Owner |
 
 ## Open questions (move to Decisions when answered)
 
-- [ ] College email domain (e.g. `@abc.edu.in`). Allow staff/alumni?
-- [ ] Frontend: plain HTML/JS or React + Vite?
+- [ ] Roll-number format (e.g. `22BCS045`) and source of the official list
+- [ ] Team members' names and roles
 - [ ] Demo or submission deadline
 - [ ] Is college permission needed?
 - [ ] Approximate number of students (for PRD success targets)
@@ -65,16 +71,17 @@ Coding style, tools, communication and workflow preferences go here as teammates
 
 - **Database:** snake_case tables/columns; schema lives in `supabase/schema.sql`; every schema change goes in that file.
 - **Folders:** `src/lib` (Supabase client, helpers), `src/pages`, `src/components`, `src/styles`, `supabase/`.
-- **Env vars:** `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_COLLEGE_DOMAIN`.
+- **Config:** Supabase URL + anon key live in `src/lib/supabase.js` (public-safe). No env vars in the frontend. GitHub Actions uses secrets `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
+- **Roll numbers:** stored in UPPERCASE and trimmed.
 - **Git:** repo at https://github.com/nitesh785/P2P_Campus_marketplace, default branch `main`. Branching and review rules are TBD by the team.
 
 ## Current status
 
-- **Phase:** 0, decisions and accounts (see TODO.md).
+- **Phase:** 1, project setup (see TODO.md). All accounts are created.
 - **Done:** README rewritten for zero cost; PRD.md and TODO.md created; database chosen.
 - **Done:** Git repo pushed to GitHub (`main`).
 - **Not done yet:** code, Supabase project.
-- **Next step:** once the domain and frontend choice are known, continue Phase 1 (folder structure, `.env.example`, `schema.sql`).
+- **Next step:** Phase 1: folder structure, `supabase/schema.sql`, `src/lib/supabase.js`. Waiting on the roll-number format and list.
 
 ## Change log
 
@@ -82,3 +89,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | --- | --- |
 | 2026-09-25 | Created CLAUDE.md, README.md, PRD.md, TODO.md |
 | 2026-09-26 | Initialised Git, added .gitignore, pushed to GitHub |
+| 2026-09-26 | Switched verification to roll-number allowlist; frontend set to plain HTML/JS; README, PRD, TODO updated |

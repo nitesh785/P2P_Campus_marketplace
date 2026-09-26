@@ -4,38 +4,43 @@ Tick items as you finish them (`- [x]`). Items marked **(you)** need the project
 
 ## Phase 0: Decisions and accounts (you)
 
-- [ ] **(you)** Confirm the college email domain (e.g. `@abc.edu.in`)
-- [ ] **(you)** Pick the frontend: plain HTML/JS or React + Vite
+- [x] **(you)** College email domain: none available; using a roll-number allowlist instead
+- [x] **(you)** Pick the frontend: plain HTML/CSS/JS
+- [x] **(you)** Who can join: students only
+- [ ] **(you)** Get the official roll-number list as a CSV (`roll_no,full_name`)
+- [ ] **(you)** Tell Claude the roll-number format (e.g. `22BCS045`)
+- [ ] **(you)** Add team members' names and roles to CLAUDE.md
+- [ ] **(you)** Invite team admins to the Supabase project (Organization → Team)
 - [ ] **(you)** Confirm the demo or submission deadline
 - [ ] **(you)** Check whether college permission is needed
-- [ ] **(you)** Create a GitHub account and an empty repo `campus-marketplace`
-- [ ] **(you)** Create a Supabase account (sign in with GitHub, free plan, region Mumbai `ap-south-1`)
-- [ ] **(you)** Create a Brevo account and generate SMTP credentials
-- [ ] **(you)** Create a Cloudflare account (for Pages hosting)
-- [ ] **(you)** Install Git, Node.js LTS and VS Code
+- [x] **(you)** Create a GitHub account and repo
+- [x] **(you)** Create a Supabase account (free plan, region Mumbai `ap-south-1`)
+- [x] **(you)** Create a Brevo account and generate SMTP credentials
+- [x] **(you)** Create a Cloudflare account (for Pages hosting)
+- [x] **(you)** Install Git, Node.js and VS Code
 
 ## Phase 1: Project setup
 
-- [ ] `git init`, add `.gitignore` (include `.env`, `node_modules/`, `dist/`)
-- [ ] Create `.env.example` with placeholder values; keep the real `.env` out of Git
+- [x] `git init`, add `.gitignore` (includes `.env`), push to GitHub
 - [ ] Scaffold the folder structure (`src/lib`, `src/pages`, `src/components`, `src/styles`, `supabase/`)
 - [ ] Write `supabase/schema.sql` (tables, enums, indexes, categories seed)
-- [ ] Add the Row Level Security policies and the college-domain trigger to `schema.sql`
+- [ ] Add the Row Level Security policies and the roll-number sign-up trigger to `schema.sql`
+- [ ] Import the roll-number CSV into `allowed_students`
 - [ ] Run `schema.sql` in the Supabase SQL Editor
 - [ ] Create the public `product-images` bucket (1 MB limit, webp/jpeg/png) and its storage policies
-- [ ] Add `src/lib/supabase.js` (`createClient` with URL + anon key)
+- [ ] Add `src/lib/supabase.js` (`createClient` with URL + anon key, supabase-js from CDN)
 
 ## Phase 2: Authentication (FR-01, FR-02)
 
 - [ ] Enable "Confirm email" in Supabase Auth
 - [ ] Connect Brevo SMTP in Supabase Auth settings
 - [ ] Set the Site URL and redirect URLs
-- [ ] Registration page (name, email, phone, password, confirm, consent checkbox)
-- [ ] Create a `profiles` row after sign-up
+- [ ] Registration page (roll number, name, email, phone, password, confirm, consent checkbox)
+- [ ] Friendly error for "roll number not found or already registered"
 - [ ] Login page and logout button
 - [ ] Forgot/reset password flow
 - [ ] Route guard: redirect logged-out users to login
-- [ ] Test: college email accepted, `@gmail.com` rejected, unverified login blocked
+- [ ] Test: listed roll number accepted, unlisted and reused roll numbers rejected, unverified login blocked
 
 ## Phase 3: Listings (FR-03, FR-04, FR-08)
 
@@ -74,7 +79,7 @@ Tick items as you finish them (`- [x]`). Items marked **(you)** need the project
 ## Phase 7: Deployment
 
 - [ ] Push to GitHub
-- [ ] Connect the repo to Cloudflare Pages and add environment variables
+- [ ] Connect the repo to Cloudflare Pages (no build command, output `/`)
 - [ ] Update the Supabase Site URL to the live `*.pages.dev` URL
 - [ ] Add `SUPABASE_URL` and `SUPABASE_ANON_KEY` as GitHub Actions secrets
 - [ ] Add `.github/workflows/keep-alive.yml` and run it once manually
