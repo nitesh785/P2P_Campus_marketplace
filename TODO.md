@@ -48,16 +48,17 @@ Tick items as you finish them (`- [x]`). Items marked **(you)** need the project
 - [x] Upload 1–3 images to `<user_id>/<product_id>/<n>.webp`, clean up on failure
 - [x] Insert the product row with `image_paths`
 - [x] Product details page with a swipe gallery and WhatsApp button (`product.html`)
-- [ ] **(you)** Test: sell an item with 3 photos, view it, check the WhatsApp link
+- [x] **(you)** Test: sell an item with 3 photos, view it
 
 ## Phase 4: Marketplace (FR-05, FR-06, FR-07)
 
-- [ ] Product card component
-- [ ] Grid with pagination (20 per page, "Load more")
-- [ ] Keyword search (full-text `textSearch`)
-- [ ] Category, price range and condition filters, combinable with search
-- [ ] Empty-state and loading states
-- [ ] Lazy-load images
+- [x] Product card component
+- [x] Grid with pagination (20 per page, "Load more")
+- [x] Keyword search (full-text prefix search)
+- [x] Category, price range and condition filters, combinable with search
+- [x] Empty state
+- [x] Lazy-load images
+- [ ] **(you)** Test as a second user: see the item, search, filter, open it, WhatsApp button
 
 ## Phase 5: Seller dashboard and contact (FR-09, FR-10, FR-11)
 

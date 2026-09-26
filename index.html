@@ -7,29 +7,123 @@
   <link rel="stylesheet" href="src/styles/main.css">
 </head>
 <body>
-<main>
-  <h1>Campus Marketplace</h1>
-  <p id="hello">Loading…</p>
-  <p>The marketplace is coming in the next phase.</p>
-  <p><a class="button" href="sell.html">Sell an item</a></p>
-  <button id="logout" type="button" class="link">Log out</button>
+<main class="full">
+  <header class="topbar">
+    <h1>Campus Marketplace</h1>
+    <nav>
+      <span id="hello" class="muted"></span>
+      <a class="button small" href="sell.html">Sell an item</a>
+      <button id="logout" type="button" class="link">Log out</button>
+    </nav>
+  </header>
+
+  <form id="filters" class="filters" role="search">
+    <input name="q" type="search" placeholder="Search books, calculators, cycles…" aria-label="Search">
+    <select name="category" aria-label="Category"><option value="">All categories</option></select>
+    <select name="condition" aria-label="Condition">
+      <option value="">Any condition</option>
+      <option>New</option><option>Like New</option><option>Good</option><option>Fair</option><option>Poor</option>
+    </select>
+    <input name="min" type="number" min="0" step="1" inputmode="numeric" placeholder="Min ₹" aria-label="Minimum price">
+    <input name="max" type="number" min="0" step="1" inputmode="numeric" placeholder="Max ₹" aria-label="Maximum price">
+  </form>
+
+  <p id="msg" class="msg" role="status" aria-live="polite"></p>
+  <ul id="grid" class="grid"></ul>
+  <button id="more" type="button" class="secondary" hidden>Load more</button>
 </main>
 
 <script type="module">
-  import { supabase, requireUser } from './src/lib/supabase.js';
+  import { supabase, requireUser, showMessage } from './src/lib/supabase.js';
 
+  const PAGE_SIZE = 20;
   const user = await requireUser();
-  if (user) {
-    const { data } = await supabase.from('profiles').select('name, roll_no').eq('id', user.id).single();
-    document.getElementById('hello').textContent = data
-      ? `Logged in as ${data.name} (${data.roll_no})`
-      : `Logged in as ${user.email}`;
+  const form = document.getElementById('filters');
+  const f = form.elements;
+  const grid = document.getElementById('grid');
+  const more = document.getElementById('more');
+  const bucket = supabase.storage.from('product-images');
+  let page = 0;
+  let requestId = 0; // ignore responses that arrive after a newer search started
+
+  const [{ data: me }, { data: categories }] = await Promise.all([
+    supabase.from('profiles').select('name').eq('id', user.id).single(),
+    supabase.from('categories').select('id, name, icon').order('id'),
+  ]);
+  document.getElementById('hello').textContent = me ? `Hi, ${me.name.split(' ')[0]}` : '';
+  for (const c of categories ?? []) f.category.add(new Option(`${c.icon} ${c.name}`, c.id));
+
+  // "calc cas" → 'calc:* & cas:*' so partial words match (prefix search on the full-text index).
+  // Only letters and digits get through, so user input can't break the query syntax.
+  function toPrefixQuery(text) {
+    const words = text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+    return words.map((w) => `${w}:*`).join(' & ');
   }
+
+  async function load(reset) {
+    if (reset) page = 0;
+    const id = ++requestId;
+    more.disabled = true;
+
+    let q = supabase
+      .from('products')
+      .select('id, title, price, condition, image_paths, categories(name, icon)')
+      .eq('status', 'available')
+      .order('created_at', { ascending: false })
+      .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+
+    const search = toPrefixQuery(f.q.value);
+    if (search) q = q.textSearch('search', search, { config: 'english' });
+    if (f.category.value) q = q.eq('category_id', Number(f.category.value));
+    if (f.condition.value) q = q.eq('condition', f.condition.value);
+    if (f.min.value) q = q.gte('price', Number(f.min.value));
+    if (f.max.value) q = q.lte('price', Number(f.max.value));
+
+    const { data, error } = await q;
+    if (id !== requestId) return;
+    more.disabled = false;
+
+    if (error) return showMessage(error.message);
+    const cards = data.map(card);
+    if (reset) grid.replaceChildren(...cards);
+    else grid.append(...cards);
+
+    more.hidden = data.length < PAGE_SIZE;
+    showMessage(grid.children.length ? '' : 'No items found. Try a different search or filter.');
+  }
+
+  function card(p) {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <a class="card" href="product.html?id=${p.id}">
+        <img loading="lazy" alt="">
+        <span class="card-body">
+          <span class="card-price"></span>
+          <span class="card-title"></span>
+          <span class="card-meta"></span>
+        </span>
+      </a>`;
+    li.querySelector('img').src = bucket.getPublicUrl(p.image_paths[0]).data.publicUrl;
+    li.querySelector('.card-price').textContent = `₹${p.price.toLocaleString('en-IN')}`;
+    li.querySelector('.card-title').textContent = p.title;
+    li.querySelector('.card-meta').textContent = `${p.categories.icon} ${p.categories.name} · ${p.condition}`;
+    return li;
+  }
+
+  let timer;
+  form.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => load(true), 300); // wait for typing to pause
+  });
+  form.addEventListener('submit', (e) => { e.preventDefault(); clearTimeout(timer); load(true); });
+  more.addEventListener('click', () => { page++; load(false); });
 
   document.getElementById('logout').addEventListener('click', async () => {
     await supabase.auth.signOut();
     location.replace('login.html');
   });
+
+  if (user) load(true);
 </script>
 </body>
 </html>

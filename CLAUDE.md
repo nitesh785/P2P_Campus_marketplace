@@ -87,8 +87,10 @@ Coding style, tools, communication and workflow preferences go here as teammates
 - **Done:** `schema.sql` run in Supabase (project `icphsbadppjnztfxxuui`); URL + publishable key in `src/lib/supabase.js`; register, login, forgot/reset password, logout and a guarded home page built.
 - **Done:** Brevo SMTP connected; sign-up → confirmation email → login tested successfully (2026-09-26).
 - **Done:** Phase 3 code: `sell.html` (form, native canvas compression to WebP/JPEG ≤ 200 KB, upload + cleanup on failure) and `product.html` (swipe gallery, details, WhatsApp button).
-- **Not done yet:** Phase 3 needs a manual test; the `read own images` storage policy must be run in Supabase; marketplace grid, dashboard.
-- **Next step:** owner runs the new storage policy and tests selling an item; then Phase 4 (marketplace grid, search, filters).
+- **Done:** Phase 3 tested by owner (sell + view photos works).
+- **Done:** Phase 4 code: marketplace grid on `index.html`, prefix full-text search (`calc` finds calculator), category/condition/price filters, 20 per page + Load more.
+- **Not done yet:** Phase 4 manual test; Phase 5 (My Listings: edit, delete, mark sold).
+- **Next step:** owner tests the marketplace as a second user; then Phase 5.
 
 ## Gotchas (setup lessons)
 
@@ -108,3 +110,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-26 | Schema run in Supabase; added auth pages (register, login, reset, home with logout) |
 | 2026-09-26 | Brevo SMTP connected (fixed Unauthorized IP error); auth flow tested OK |
 | 2026-09-26 | Phase 3: sell + product pages, motion rules from emil-design-eng/animate skills, storage read policy, fixed [hidden] CSS bug |
+| 2026-09-26 | Phase 4: marketplace grid with search, filters, pagination on index.html |
