@@ -439,49 +439,58 @@ async function renderHeader(slot) {
   }
 }
 
-function renderFooter(slot) {
+async function renderFooter(slot) {
   const year = new Date().getFullYear();
+  const session = await sessionReady;
+  const account = session
+    ? `<li><a href="/dashboard.html">Dashboard</a></li>
+       <li><a href="/messages.html">Messages</a></li>
+       <li><a href="/profile.html">Profile</a></li>`
+    : `<li><a href="/login.html">Log in</a></li>
+       <li><a href="/register.html">Sign up</a></li>`;
   slot.innerHTML = `
     <footer class="site-footer">
       <div class="container">
-        <div class="footer-grid">
-          <div>
-            ${logo}
-            <p>A marketplace for students of one campus to buy and sell books, electronics, cycles and hostel essentials from each other.</p>
+        <div class="footer-top">
+          <div class="footer-brand">
+            <a class="logo" href="/"><img class="logo-img" src="/images/logo-mark.png" width="58" height="34" alt="">Campus Marketplace</a>
+            <p class="footer-tag">Buy. Sell. <em>Connect.</em></p>
+            <p class="footer-about">The student marketplace for ABESIT. Books, gadgets, cycles and hostel essentials from people on your campus.</p>
+            <div class="footer-actions">
+              <a class="btn btn-accent btn-sm" href="/sell.html">${icon('plus')}Sell an item</a>
+              <button type="button" class="btn btn-glass btn-sm" data-install>${icon('smartphone')}Install app</button>
+            </div>
           </div>
-          <div>
-            <h2>Platform</h2>
-            <ul>
-              <li><a href="/marketplace.html">Marketplace</a></li>
-              <li><a href="/wanted.html">Wanted board</a></li>
-              <li><a href="/#categories">Categories</a></li>
-              <li><a href="/dashboard.html">Dashboard</a></li>
-            </ul>
-          </div>
-          <div>
-            <h2>Company</h2>
-            <ul>
-              <li><a href="/about.html">About</a></li>
-              <li><a href="/how-it-works.html">How it works</a></li>
-              <li><a href="/faq.html">FAQ</a></li>
-            </ul>
-          </div>
-          <div>
-            <h2>Account</h2>
-            <ul>
-              <li><a href="/login.html">Log in</a></li>
-              <li><a href="/register.html">Sign up</a></li>
-              <li><a href="/profile.html">Profile</a></li>
-              <li><button type="button" class="footer-link" data-install>Install the app</button></li>
-            </ul>
-          </div>
+          <nav class="footer-links" aria-label="Footer">
+            <div>
+              <h2>Marketplace</h2>
+              <ul>
+                <li><a href="/marketplace.html">Browse</a></li>
+                <li><a href="/wanted.html">Wanted board</a></li>
+                <li><a href="/#categories">Categories</a></li>
+              </ul>
+            </div>
+            <div>
+              <h2>Help</h2>
+              <ul>
+                <li><a href="/how-it-works.html">How it works</a></li>
+                <li><a href="/faq.html">FAQ</a></li>
+                <li><a href="/about.html">About</a></li>
+              </ul>
+            </div>
+            <div>
+              <h2>Account</h2>
+              <ul>${account}</ul>
+            </div>
+          </nav>
         </div>
         <div class="footer-bottom">
-          <span>© ${year} Campus Marketplace</span>
-          <nav aria-label="Legal"><a href="/privacy.html">Privacy Policy</a><a href="/terms.html">Terms of Service</a></nav>
+          <span>© ${year} Campus Marketplace · Made by students at ABESIT</span>
+          <nav aria-label="Legal"><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></nav>
         </div>
       </div>
     </footer>`;
+  wireInstallButtons(slot);
 }
 
 // Every [data-install] control opens the install flow; hidden inside the installed app.

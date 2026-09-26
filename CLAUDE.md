@@ -176,3 +176,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-27 | Added official logo (header, footer, sign-in, About, icons) and ABESIT campus map picker for meeting spots |
 | 2026-09-27 | Permanent Install app button (menu, footer, dashboard card) replaces the one-time browser pop-up; versioned icon files so installed apps pick up the new logo |
 | 2026-09-27 | Mobile pass (emil-design-eng): bottom tab bar, compact landing sections, collapsible filters, sticky contact bar, fixed sign-in layout and admin overflow; website copy updated for chat, map, Wanted, ratings, privacy, install |
+| 2026-09-27 | Footer redesigned: deep-teal brand block (logo, tagline, Sell + Install buttons), three link groups that adapt to login state, compact on phones |
