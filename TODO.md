@@ -103,7 +103,7 @@ Tick items as you finish them (`- [x]`). Items marked **(you)** need the project
 - [x] Price inputs no longer change on mouse-wheel scroll
 - [x] "Take photo" camera button on phones
 - [x] Listing quantity (sell form, cards, product page, dashboard "Sold one")
-- [ ] **(you)** Run the quantity migration in Supabase (end of `supabase/schema.sql`)
+- [x] **(you)** Run the quantity migration in Supabase (end of `supabase/schema.sql`)
 
 ## Post-MVP backlog
 
