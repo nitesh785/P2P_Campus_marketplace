@@ -155,7 +155,7 @@
   const $ = (elId) => document.getElementById(elId);
 
   const [{ data: p, error }, saved] = await Promise.all([
-    supabase.from('products').select('*, categories(name), profiles(name, phone)').eq('id', id ?? '').maybeSingle(),
+    supabase.from('products').select('*, categories(name), profiles:profiles!products_seller_id_fkey(name, phone)').eq('id', id ?? '').maybeSingle(),
     savedIds(),
   ]);
 
@@ -230,7 +230,7 @@
   async function loadRelated(p, catName, catLink) {
     const { data: related } = await supabase
       .from('products')
-      .select('id, title, price, quantity, negotiable, pickup_location, condition, image_paths, categories(name), profiles(name)')
+      .select('id, title, price, quantity, negotiable, pickup_location, condition, image_paths, categories(name), profiles:profiles!products_seller_id_fkey(name)')
       .eq('status', 'available')
       .gt('expires_at', nowIso())
       .eq('category_id', p.category_id)

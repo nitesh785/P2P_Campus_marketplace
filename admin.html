@@ -129,7 +129,7 @@
   async function loadReports() {
     const { data, error } = await supabase.from('reports')
       .select(`id, reason, details, created_at, reporter:profiles!reports_reporter_id_fkey(name),
-               product:products(id, title, image_paths, seller_id, seller:profiles(name))`)
+               product:products(id, title, image_paths, seller_id, seller:profiles!products_seller_id_fkey(name))`)
       .eq('status', 'open').order('created_at', { ascending: false }).limit(50);
     if (error) return $('reports').replaceChildren(stateBlock({ kind: 'error', iconName: 'triangle-alert', title: 'Could not load reports', text: error.message }));
     $('reports').replaceChildren(...(data.length ? data.map((r) => {
@@ -179,7 +179,7 @@
 
   async function loadListings() {
     const { data } = await supabase.from('products')
-      .select('id, title, price, status, image_paths, created_at, seller:profiles(name)')
+      .select('id, title, price, status, image_paths, created_at, seller:profiles!products_seller_id_fkey(name)')
       .order('created_at', { ascending: false }).limit(30);
     $('listings').replaceChildren(...(data?.length ? data.map((p) => {
       const li = row({

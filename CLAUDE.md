@@ -119,6 +119,9 @@ Coding style, tools, communication and workflow preferences go here as teammates
 
 ## Gotchas (setup lessons)
 
+- **Always name the join when embedding `profiles`:** `profiles:profiles!products_seller_id_fkey(name)`, not `profiles(name)`. Any new table linking two tables (like `saved_items`) makes a plain embed ambiguous and breaks every page that uses it ("more than one relationship was found").
+- **After every schema change run `python tools/check_queries.py`** before pushing. It tests every page's query against the live database.
+
 - **Start-up order in page scripts:** call the page's load functions at the *end* of the module. Calling them earlier throws a silent `ReferenceError` if they use a `const` helper defined further down (this blanked the admin stats once).
 - **Git Bash heredocs** break on some Unicode characters (curly quotes, emoji). Write scripts to a file instead.
 
@@ -158,3 +161,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-27 | Feature batch: saved items, reports + admin page, pickup location, negotiable/free filter, 60-day expiry + renew, wanted board, seller profiles, in-app chat, seller ratings, share, recently viewed, typo-tolerant search, installable app, dark mode |
 | 2026-09-27 | Feature migration run in Supabase and verified; feature batch pushed. Analytics mention removed from privacy.html until enabled |
 | 2026-09-27 | Cloudflare Web Analytics enabled (beacon on all pages), privacy.html updated |
+| 2026-09-27 | Fixed ambiguous products→profiles joins after saved_items was added (broke admin and listing pages); added tools/check_queries.py |

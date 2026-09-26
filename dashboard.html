@@ -120,7 +120,7 @@
   const savedList = document.getElementById('saved-list');
   savedList.replaceChildren(...skeletonCards(4));
   const { data: savedRows } = await supabase.from('saved_items')
-    .select('product_id, products(id, title, price, quantity, negotiable, pickup_location, condition, status, expires_at, image_paths, categories(name), profiles(name))')
+    .select('product_id, products(id, title, price, quantity, negotiable, pickup_location, condition, status, expires_at, image_paths, categories(name), profiles:profiles!products_seller_id_fkey(name))')
     .order('created_at', { ascending: false });
   const savedSet = new Set((savedRows ?? []).map((r) => r.product_id));
   const renderSaved = () => {

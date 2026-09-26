@@ -83,7 +83,7 @@
   let category = ''; // category id
   let requestId = 0; // ignore responses that arrive after a newer search started
   const FILTERS = ['q', 'condition', 'pickup', 'deal', 'sort', 'min', 'max'];
-  const SELECT = 'id, title, price, quantity, negotiable, pickup_location, condition, image_paths, categories(name), profiles(name)';
+  const SELECT = 'id, title, price, quantity, negotiable, pickup_location, condition, image_paths, categories(name), profiles:profiles!products_seller_id_fkey(name)';
   for (const place of PICKUP_LOCATIONS) f.pickup.add(new Option(place, place));
 
   // Category chips from the database

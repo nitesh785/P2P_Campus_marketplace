@@ -86,7 +86,7 @@
   async function load() {
     list.setAttribute('aria-busy', 'true');
     let q = supabase.from('wanted_posts')
-      .select('id, user_id, title, details, max_budget, status, created_at, categories(name), profiles(name, phone)')
+      .select('id, user_id, title, details, max_budget, status, created_at, categories(name), profiles:profiles!wanted_posts_user_id_fkey(name, phone)')
       .order('created_at', { ascending: false }).limit(60);
     if ($('mine').checked) q = q.eq('user_id', user.id);
     else q = q.eq('status', 'open');
