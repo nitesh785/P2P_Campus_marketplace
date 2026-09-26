@@ -52,6 +52,7 @@ College-only web marketplace where verified students buy and sell second-hand it
 | 2026-09-27 | Build every free-tier feature from suggestion.md except email alerts | Owner |
 | 2026-09-27 | Listings expire 60 days after posting/renewal via an `expires_at` column filtered in queries (no cron job) | Claude |
 | 2026-09-27 | Only a buyer the seller replied to in Messages can rate that seller, once per conversation | Claude |
+| 2026-09-27 | Chats are kept when their listing or wanted post is deleted (deliberate: the history stays; the chat header just loses its link). Don't change without asking | Owner |
 | 2026-09-27 | College is ABESIT; meeting spots come from the campus map (`CAMPUS_SPOTS` in `layout.js`, pins in % of the map) | Owner |
 | 2026-09-27 | Official logo used for header/footer mark, sign-in panels, About, favicon and app icons | Owner |
 | 2026-09-27 | WhatsApp numbers are private by default (opt-in `show_whatsapp`); only `whatsapp_numbers()` can return a number. "I have this" on Wanted opens an in-app chat | Owner |
