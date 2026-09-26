@@ -72,7 +72,7 @@
   import { icon, categoryIcon, productCard, skeletonCards, stateBlock, nowIso, savedIds, recentlyViewed, PICKUP_LOCATIONS } from '/src/lib/layout.js';
 
   const PAGE_SIZE = 20;
-  await requireUser();
+  const user = await requireUser();
 
   const form = document.getElementById('filters');
   const f = form.elements;
@@ -144,6 +144,7 @@
       .from('products')
       .select(SELECT, { count: 'exact' })
       .eq('status', 'available')
+      .neq('seller_id', user.id) // your own listings are on your dashboard, not here
       .gt('expires_at', nowIso());
 
     const search = toPrefixQuery(f.q.value);
@@ -206,7 +207,7 @@
     const { data: ids } = await supabase.rpc('search_products_fuzzy', { q: text.slice(0, 60) });
     if (!ids?.length) return [];
     const order = ids.map((r) => r.id);
-    const { data } = await supabase.from('products').select(SELECT).in('id', order);
+    const { data } = await supabase.from('products').select(SELECT).in('id', order).neq('seller_id', user.id);
     return (data ?? []).sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
   }
 
@@ -216,7 +217,7 @@
     const ids = recentlyViewed();
     if (!ids.length) return;
     const { data } = await supabase.from('products').select(SELECT)
-      .in('id', ids).eq('status', 'available').gt('expires_at', nowIso());
+      .in('id', ids).eq('status', 'available').gt('expires_at', nowIso()).neq('seller_id', user.id);
     const items = (data ?? []).sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id)).slice(0, 6);
     recentCount = items.length;
     document.getElementById('recent').replaceChildren(...items.map((p) => productCard(p, { saved })));

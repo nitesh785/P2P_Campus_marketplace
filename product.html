@@ -241,6 +241,7 @@
       .from('products')
       .select('id, title, price, quantity, negotiable, pickup_location, condition, image_paths, categories(name), profiles:profiles!products_seller_id_fkey(name)')
       .eq('status', 'available')
+      .neq('seller_id', user.id)
       .gt('expires_at', nowIso())
       .eq('category_id', p.category_id)
       .neq('id', p.id)

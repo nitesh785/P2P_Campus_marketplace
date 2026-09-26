@@ -52,6 +52,7 @@ College-only web marketplace where verified students buy and sell second-hand it
 | 2026-09-27 | Build every free-tier feature from suggestion.md except email alerts | Owner |
 | 2026-09-27 | Listings expire 60 days after posting/renewal via an `expires_at` column filtered in queries (no cron job) | Claude |
 | 2026-09-27 | Only a buyer the seller replied to in Messages can rate that seller, once per conversation | Claude |
+| 2026-09-27 | Students don't see their own listings when browsing (marketplace, search, recently viewed, landing, related). They manage them on the dashboard and see them on their own seller profile | Owner |
 | 2026-09-27 | Chats are kept when their listing or wanted post is deleted (deliberate: the history stays; the chat header just loses its link). Don't change without asking | Owner |
 | 2026-09-27 | College is ABESIT; meeting spots come from the campus map (`CAMPUS_SPOTS` in `layout.js`, pins in % of the map) | Owner |
 | 2026-09-27 | Official logo used for header/footer mark, sign-in panels, About, favicon and app icons | Owner |
@@ -177,3 +178,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-27 | Permanent Install app button (menu, footer, dashboard card) replaces the one-time browser pop-up; versioned icon files so installed apps pick up the new logo |
 | 2026-09-27 | Mobile pass (emil-design-eng): bottom tab bar, compact landing sections, collapsible filters, sticky contact bar, fixed sign-in layout and admin overflow; website copy updated for chat, map, Wanted, ratings, privacy, install |
 | 2026-09-27 | Footer redesigned: deep-teal brand block (logo, tagline, Sell + Install buttons), three link groups that adapt to login state, compact on phones |
+| 2026-09-27 | Own listings hidden from marketplace, search, recently viewed, landing and related listings |
