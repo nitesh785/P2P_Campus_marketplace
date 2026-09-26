@@ -83,6 +83,7 @@ Coding style, tools, communication and workflow preferences go here as teammates
 - **Database:** snake_case tables/columns; schema lives in `supabase/schema.sql`; every schema change goes in that file.
 - **Pages (repo root):** `index.html` (public landing), `login.html`, `register.html`, `reset.html`, `marketplace.html`, `product.html`, `sell.html` (edit mode via `?id=`), `dashboard.html` (my listings, stats, saved items), `profile.html`, `seller.html?id=`, `wanted.html`, `messages.html?c=`, `admin.html`, `offline.html` (PWA fallback), `how-it-works.html`, `about.html`, `faq.html`, `privacy.html`, `terms.html`, `404.html` (served by Cloudflare for missing URLs).
 - **Shared code:** `src/lib/supabase.js` (client, `requireUser`, `nextPage`, `showMessage`, `busy`), `src/lib/layout.js` (header/footer injected into `#site-header`/`#site-footer`, `productCard`, `skeletonCards`, `stateBlock`, `icon`, formatters), `src/styles/main.css` (the design system), `src/icons.svg` (Lucide subset; add a symbol there before using a new icon).
+- **Analytics:** Cloudflare Web Analytics beacon (public token) before `</body>` on every page except `offline.html`. New pages must include it.
 - **App (PWA):** `manifest.json`, `sw.js` (offline fallback only, never caches data), `icons/`.
 - **Migrations:** `supabase/schema.sql` first, then `supabase/migrations/*.sql` in date order. New DB changes go in a new dated file there.
 - **Paths:** root-absolute (`/src/...`, `/marketplace.html`) in shared code and 404 so they work at any URL.
@@ -114,7 +115,7 @@ Coding style, tools, communication and workflow preferences go here as teammates
 - **Done:** Phase 5 code: `my-listings.html` (now replaced by `dashboard.html`) (edit, mark sold/available, delete with photo cleanup), edit mode in `sell.html`.
 - **Done:** Phase 5 tested by owner; Phase 6 API security checks passed (logged-out reads/writes blocked, no secrets in repo); keep-alive workflow added.
 - **Not done yet:** Cloudflare Pages deployment; mobile/keyboard check; demo data.
-- **Next step:** owner makes team admins and tests chat, reports and the admin page on the live site. Analytics not enabled (optional: Cloudflare → Analytics & Logs → Web Analytics → Add a site gives a beacon token; add its script tag to pages and mention it in privacy.html).
+- **Next step:** owner makes team admins and tests chat, reports and the admin page on the live site.
 
 ## Gotchas (setup lessons)
 
@@ -156,3 +157,4 @@ Coding style, tools, communication and workflow preferences go here as teammates
 | 2026-09-27 | Added suggestion.md (free-tier feature ideas, recommended next 3) |
 | 2026-09-27 | Feature batch: saved items, reports + admin page, pickup location, negotiable/free filter, 60-day expiry + renew, wanted board, seller profiles, in-app chat, seller ratings, share, recently viewed, typo-tolerant search, installable app, dark mode |
 | 2026-09-27 | Feature migration run in Supabase and verified; feature batch pushed. Analytics mention removed from privacy.html until enabled |
+| 2026-09-27 | Cloudflare Web Analytics enabled (beacon on all pages), privacy.html updated |

@@ -116,7 +116,7 @@ Tick items as you finish them (`- [x]`). Items marked **(you)** need the project
 - [x] Installable app (manifest, icons, offline page), dark mode
 - [x] **(you)** Run `supabase/migrations/2026-09-27-features.sql` in Supabase
 - [ ] **(you)** Make team members admins (SQL in the handover message / README)
-- [ ] **(optional)** Cloudflare Web Analytics: needs a site token added to the pages (see CLAUDE.md); add a line to privacy.html when enabled
+- [x] Cloudflare Web Analytics beacon added to all pages
 - [ ] **(you)** Test chat between two accounts, a report, and the admin page
 
 ## Post-MVP backlog
